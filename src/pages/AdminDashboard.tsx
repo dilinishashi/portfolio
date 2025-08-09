@@ -6,18 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
-import { useState, FormEvent } from 'react';
-import { showSuccess } from '@/utils/toast';
+import { useState, FormEvent, ChangeEvent } from 'react';
+import { showSuccess, showError } from '@/utils/toast';
 import { Separator } from '@/components/ui/separator';
 
 const AdminDashboard = () => {
   const { logout } = useAuth();
   const { content, updateContent } = useContent();
   
-  // Hero State
   const [heroState, setHeroState] = useState(content.hero);
-  
-  // Other sections state
   const [aboutTitle, setAboutTitle] = useState(content.about.title);
   const [aboutDescription, setAboutDescription] = useState(content.about.description);
   const [portfolioTitle, setPortfolioTitle] = useState(content.portfolio.title);
@@ -40,6 +37,22 @@ const AdminDashboard = () => {
     const newSocials = [...heroState.socials];
     newSocials[index].url = url;
     setHeroState(prevState => ({ ...prevState, socials: newSocials }));
+  };
+
+  const handleCvUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        showError('Please upload a PDF file.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        handleHeroChange('cvLink', reader.result as string);
+        showSuccess("CV uploaded. Click 'Save Hero' to apply changes.");
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -72,7 +85,13 @@ const AdminDashboard = () => {
                     <div><Label htmlFor="heroName">Name</Label><Input id="heroName" value={heroState.name} onChange={(e) => handleHeroChange('name', e.target.value)} /></div>
                     <div><Label htmlFor="heroRole">Role</Label><Input id="heroRole" value={heroState.role} onChange={(e) => handleHeroChange('role', e.target.value)} /></div>
                     <div><Label htmlFor="heroDescription">Description</Label><Textarea id="heroDescription" value={heroState.description} onChange={(e) => handleHeroChange('description', e.target.value)} /></div>
-                    <div><Label htmlFor="heroCvLink">CV Link</Label><Input id="heroCvLink" value={heroState.cvLink} onChange={(e) => handleHeroChange('cvLink', e.target.value)} /></div>
+                    
+                    <div>
+                      <Label htmlFor="cvUpload">Upload CV (PDF only)</Label>
+                      <Input id="cvUpload" type="file" accept="application/pdf" onChange={handleCvUpload} className="mt-1" />
+                      {heroState.cvLink && heroState.cvLink !== '#' && <p className="text-sm text-muted-foreground mt-2">A CV is currently uploaded. Uploading a new one will replace it.</p>}
+                    </div>
+
                     <div><Label htmlFor="heroContactLink">"Get In Touch" Link</Label><Input id="heroContactLink" value={heroState.contactLink} onChange={(e) => handleHeroChange('contactLink', e.target.value)} /></div>
                   </div>
                   <Separator />
@@ -94,7 +113,6 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Other Tabs remain the same */}
           <TabsContent value="about">
             <Card>
               <CardHeader><CardTitle>About Section</CardTitle></CardHeader>
