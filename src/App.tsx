@@ -18,8 +18,8 @@ const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <ContentProvider>
+        <ContentProvider>
+          <AuthProvider>
             <Toaster />
             <Sonner />
             <Routes>
@@ -30,8 +30,8 @@ const App = () => (
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </ContentProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </ContentProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </ThemeProvider>
