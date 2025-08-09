@@ -10,6 +10,14 @@ import { useState, FormEvent, ChangeEvent } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Separator } from '@/components/ui/separator';
 
+// Define the type for a single "Get In Touch" link
+type GetInTouchLink = {
+  icon: string;
+  name: string;
+  url: string;
+  color: string;
+};
+
 const AdminDashboard = () => {
   const { logout } = useAuth();
   const { content, updateContent } = useContent();
@@ -37,6 +45,12 @@ const AdminDashboard = () => {
     const newSocials = [...heroState.socials];
     newSocials[index].url = url;
     setHeroState(prevState => ({ ...prevState, socials: newSocials }));
+  };
+
+  const handleGetInTouchChange = (index: number, field: keyof GetInTouchLink, value: string) => {
+    const newLinks = [...heroState.getInTouchLinks];
+    newLinks[index] = { ...newLinks[index], [field]: value };
+    setHeroState(prevState => ({ ...prevState, getInTouchLinks: newLinks }));
   };
 
   const handleCvUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -91,8 +105,6 @@ const AdminDashboard = () => {
                       <Input id="cvUpload" type="file" accept="application/pdf" onChange={handleCvUpload} className="mt-1" />
                       {heroState.cvLink && heroState.cvLink !== '#' && <p className="text-sm text-muted-foreground mt-2">A CV is currently uploaded. Uploading a new one will replace it.</p>}
                     </div>
-
-                    <div><Label htmlFor="heroContactLink">"Get In Touch" Link</Label><Input id="heroContactLink" value={heroState.contactLink} onChange={(e) => handleHeroChange('contactLink', e.target.value)} /></div>
                   </div>
                   <Separator />
                   <div>
@@ -103,6 +115,35 @@ const AdminDashboard = () => {
                         <div key={index}>
                           <Label htmlFor={`social-url-${index}`}>{social.name} URL</Label>
                           <Input id={`social-url-${index}`} value={social.url} onChange={(e) => handleSocialChange(index, e.target.value)} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <Separator />
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">"Get In Touch" Links</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Update the links for the 'Get In Touch' popup.</p>
+                    <div className="space-y-4">
+                      {heroState.getInTouchLinks.map((link, index) => (
+                        <div key={index} className="p-4 border rounded-md space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor={`get-in-touch-name-${index}`}>Name</Label>
+                              <Input id={`get-in-touch-name-${index}`} value={link.name} onChange={(e) => handleGetInTouchChange(index, 'name', e.target.value)} />
+                            </div>
+                            <div>
+                              <Label htmlFor={`get-in-touch-icon-${index}`}>Icon Name (from Lucide)</Label>
+                              <Input id={`get-in-touch-icon-${index}`} value={link.icon} onChange={(e) => handleGetInTouchChange(index, 'icon', e.target.value)} />
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor={`get-in-touch-url-${index}`}>URL</Label>
+                            <Input id={`get-in-touch-url-${index}`} value={link.url} onChange={(e) => handleGetInTouchChange(index, 'url', e.target.value)} />
+                          </div>
+                          <div>
+                            <Label htmlFor={`get-in-touch-color-${index}`}>Color Classes (Tailwind CSS)</Label>
+                            <Input id={`get-in-touch-color-${index}`} value={link.color} onChange={(e) => handleGetInTouchChange(index, 'color', e.target.value)} />
+                          </div>
                         </div>
                       ))}
                     </div>

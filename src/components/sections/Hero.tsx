@@ -4,11 +4,13 @@ import { ArrowDown, Mail } from "lucide-react";
 import { useContent } from "@/context/ContentContext";
 import SocialIcon from "@/components/SocialIcon";
 import CVViewer from "@/components/CVViewer";
+import GetInTouchModal from "@/components/GetInTouchModal";
 
 const Hero = () => {
   const { content } = useContent();
   const { hero } = content;
   const [isCvViewerOpen, setIsCvViewerOpen] = useState(false);
+  const [isGetInTouchOpen, setIsGetInTouchOpen] = useState(false);
 
   return (
     <>
@@ -37,10 +39,8 @@ const Hero = () => {
             <Button size="lg" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-lg" onClick={() => setIsCvViewerOpen(true)}>
               View My CV
             </Button>
-            <Button asChild size="lg" variant="outline">
-              <a href={hero.contactLink}>
-                <Mail className="mr-2 h-4 w-4" /> Get In Touch
-              </a>
+            <Button size="lg" variant="outline" onClick={() => setIsGetInTouchOpen(true)}>
+              <Mail className="mr-2 h-4 w-4" /> Get In Touch
             </Button>
           </div>
           <div className="flex items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: '1.2s' }}>
@@ -68,6 +68,12 @@ const Hero = () => {
         isOpen={isCvViewerOpen}
         onClose={() => setIsCvViewerOpen(false)}
         cvUrl={hero.cvLink}
+      />
+
+      <GetInTouchModal
+        isOpen={isGetInTouchOpen}
+        onClose={() => setIsGetInTouchOpen(false)}
+        links={hero.getInTouchLinks}
       />
     </>
   );

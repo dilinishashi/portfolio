@@ -11,6 +11,13 @@ interface SocialLink {
   url: string;
 }
 
+interface GetInTouchLink {
+  icon: string;
+  name: string;
+  url: string;
+  color: string;
+}
+
 interface Content {
   hero: {
     greeting: string;
@@ -18,8 +25,8 @@ interface Content {
     role: string;
     description: string;
     cvLink: string;
-    contactLink: string;
     socials: SocialLink[];
+    getInTouchLinks: GetInTouchLink[];
   };
   about: SectionContent;
   portfolio: SectionContent;
@@ -39,7 +46,6 @@ const initialContent: Content = {
     role: 'Software Quality Assurance Engineer',
     description: "I'm a Quality Assurance Engineer who turns clean code into reliable software. I build smart automation frameworks, test APIs, and ensure every release meets real-world quality. Passionate about performance, precision, and continuous improvement.",
     cvLink: '#',
-    contactLink: '#contact',
     socials: [
       { icon: 'Code', name: 'Dev Portfolio', url: '#' },
       { icon: 'Linkedin', name: 'LinkedIn', url: '#' },
@@ -47,6 +53,13 @@ const initialContent: Content = {
       { icon: 'MessageCircle', name: 'WhatsApp', url: '#' },
       { icon: 'Facebook', name: 'Facebook', url: '#' },
       { icon: 'Music', name: 'TikTok', url: '#' },
+    ],
+    getInTouchLinks: [
+      { icon: 'MessageCircle', name: 'WhatsApp', url: '#', color: 'bg-green-100 dark:bg-green-900/50 hover:bg-green-200 dark:hover:bg-green-800/50 text-green-800 dark:text-green-200' },
+      { icon: 'Mail', name: 'Email', url: 'mailto:your-email@example.com', color: 'bg-blue-100 dark:bg-blue-900/50 hover:bg-blue-200 dark:hover:bg-blue-800/50 text-blue-800 dark:text-blue-200' },
+      { icon: 'Phone', name: 'Phone', url: 'tel:+1234567890', color: 'bg-yellow-100 dark:bg-yellow-900/50 hover:bg-yellow-200 dark:hover:bg-yellow-800/50 text-yellow-800 dark:text-yellow-200' },
+      { icon: 'Facebook', name: 'Facebook', url: '#', color: 'bg-sky-100 dark:bg-sky-900/50 hover:bg-sky-200 dark:hover:bg-sky-800/50 text-sky-800 dark:text-sky-200' },
+      { icon: 'Music', name: 'TikTok', url: '#', color: 'bg-gray-800 hover:bg-gray-700 text-white dark:bg-gray-200 dark:text-gray-900 dark:hover:bg-gray-300' },
     ],
   },
   about: {
