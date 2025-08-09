@@ -7,9 +7,8 @@ const Header = () => {
   const { isLoggedIn } = useAuth();
   const navLinks = [
     { name: "Home", href: "#hero" },
-    { name: "Portfolio", href: "#portfolio" },
-    { name: "Gallery", href: "#gallery" },
     { name: "About", href: "#about" },
+    { name: "Gallery", href: "#gallery" },
     { name: "Contact", href: "#contact" },
   ];
 

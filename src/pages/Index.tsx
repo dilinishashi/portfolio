@@ -1,6 +1,5 @@
 import Header from "@/components/Header";
 import Hero from "@/components/sections/Hero";
-import Portfolio from "@/components/sections/Portfolio";
 import Gallery from "@/components/sections/Gallery";
 import About from "@/components/sections/About";
 import Contact from "@/components/sections/Contact";
@@ -12,9 +11,8 @@ const Index = () => {
       <Header />
       <main className="flex-1">
         <Hero />
-        <Portfolio />
-        <Gallery />
         <About />
+        <Gallery />
         <Contact />
       </main>
       <Footer />

@@ -18,6 +18,21 @@ interface GetInTouchLink {
   color: string;
 }
 
+interface Feature {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+interface AboutContent {
+  title: string;
+  subtitle: string;
+  bio_p1: string;
+  bio_p2: string;
+  skills: string[];
+  features: Feature[];
+}
+
 interface Content {
   hero: {
     greeting: string;
@@ -28,7 +43,7 @@ interface Content {
     socials: SocialLink[];
     getInTouchLinks: GetInTouchLink[];
   };
-  about: SectionContent;
+  about: AboutContent;
   portfolio: SectionContent;
   gallery: SectionContent;
   contact: SectionContent;
@@ -64,7 +79,32 @@ const initialContent: Content = {
   },
   about: {
     title: 'About Me',
-    description: 'I am a passionate developer with experience in building modern web applications. You can edit this text in the admin dashboard.',
+    subtitle: 'Passionate QA Engineer with 3+ years of experience ensuring software quality through smart automation and precise testing.',
+    bio_p1: "I'm a QA Engineer who loves turning complex systems into reliable, high-quality software. When I'm not testing or automating, you'll find me exploring new tools, refining my frameworks, or sharing insights with fellow tech enthusiasts.",
+    bio_p2: "My journey began with a curiosity about how software functions, and it has grown into a passion for building reliable, high-quality systems. I believe in the power of smart automation, clean code, and continuous learning to drive real impact.",
+    skills: ["C#", ".NET Core", "Selenium WebDriver", "NUnit", "PostgreSQL", "RESTful APIs", "EPPlus", "NPOI", "Git"],
+    features: [
+      {
+        icon: 'Code',
+        title: 'Clean Code',
+        description: 'Ensuring quality through maintainable, scalable test automation using modern best practices and meticulous attention to detail.'
+      },
+      {
+        icon: 'Palette',
+        title: 'Design Focus',
+        description: 'Crafting seamless, bug-free user experiences through thorough testing and smart automation.'
+      },
+      {
+        icon: 'Zap',
+        title: 'Performance',
+        description: 'Optimizing applications for performance, reliability, and seamless functionality through smart testing and automation.'
+      },
+      {
+        icon: 'Users',
+        title: 'Collaboration',
+        description: 'Partnering with teams to ensure every release meets the highest standards of quality and impact.'
+      }
+    ]
   },
   portfolio: {
     title: 'Portfolio',

@@ -10,7 +10,6 @@ import { useState, FormEvent, ChangeEvent } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Separator } from '@/components/ui/separator';
 
-// Define the type for a single "Get In Touch" link
 type GetInTouchLink = {
   icon: string;
   name: string;
@@ -18,13 +17,27 @@ type GetInTouchLink = {
   color: string;
 };
 
+type Feature = {
+  icon: string;
+  title: string;
+  description: string;
+};
+
+type AboutContent = {
+  title: string;
+  subtitle: string;
+  bio_p1: string;
+  bio_p2: string;
+  skills: string[];
+  features: Feature[];
+};
+
 const AdminDashboard = () => {
   const { logout } = useAuth();
   const { content, updateContent } = useContent();
   
   const [heroState, setHeroState] = useState(content.hero);
-  const [aboutTitle, setAboutTitle] = useState(content.about.title);
-  const [aboutDescription, setAboutDescription] = useState(content.about.description);
+  const [aboutState, setAboutState] = useState(content.about);
   const [portfolioTitle, setPortfolioTitle] = useState(content.portfolio.title);
   const [portfolioDescription, setPortfolioDescription] = useState(content.portfolio.description);
   const [galleryTitle, setGalleryTitle] = useState(content.gallery.title);
@@ -67,6 +80,21 @@ const AdminDashboard = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleAboutChange = (field: keyof AboutContent, value: any) => {
+    setAboutState(prevState => ({ ...prevState, [field]: value }));
+  };
+
+  const handleSkillChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const skills = e.target.value.split(',').map(skill => skill.trim()).filter(Boolean);
+    handleAboutChange('skills', skills);
+  };
+
+  const handleFeatureChange = (index: number, field: keyof Feature, value: string) => {
+    const newFeatures = [...aboutState.features];
+    newFeatures[index] = { ...newFeatures[index], [field]: value };
+    handleAboutChange('features', newFeatures);
   };
 
   return (
@@ -156,16 +184,42 @@ const AdminDashboard = () => {
 
           <TabsContent value="about">
             <Card>
-              <CardHeader><CardTitle>About Section</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle>About Section</CardTitle>
+                <CardDescription>Update the content for the "About Me" section.</CardDescription>
+              </CardHeader>
               <CardContent>
-                <form onSubmit={(e: FormEvent) => { e.preventDefault(); handleSave('about', { title: aboutTitle, description: aboutDescription }); }} className="space-y-4">
-                  <div><Label htmlFor="aboutTitle">Title</Label><Input id="aboutTitle" value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} /></div>
-                  <div><Label htmlFor="aboutDescription">Description</Label><Textarea id="aboutDescription" value={aboutDescription} onChange={(e) => setAboutDescription(e.target.value)} /></div>
+                <form onSubmit={(e: FormEvent) => { e.preventDefault(); handleSave('about', aboutState); }} className="space-y-6">
+                  <div className="space-y-4">
+                    <div><Label htmlFor="aboutTitle">Title</Label><Input id="aboutTitle" value={aboutState.title} onChange={(e) => handleAboutChange('title', e.target.value)} /></div>
+                    <div><Label htmlFor="aboutSubtitle">Subtitle</Label><Input id="aboutSubtitle" value={aboutState.subtitle} onChange={(e) => handleAboutChange('subtitle', e.target.value)} /></div>
+                    <div><Label htmlFor="aboutBio1">Bio Paragraph 1</Label><Textarea id="aboutBio1" rows={5} value={aboutState.bio_p1} onChange={(e) => handleAboutChange('bio_p1', e.target.value)} /></div>
+                    <div><Label htmlFor="aboutBio2">Bio Paragraph 2</Label><Textarea id="aboutBio2" rows={5} value={aboutState.bio_p2} onChange={(e) => handleAboutChange('bio_p2', e.target.value)} /></div>
+                    <div>
+                      <Label htmlFor="aboutSkills">Skills (comma-separated)</Label>
+                      <Input id="aboutSkills" value={aboutState.skills.join(', ')} onChange={handleSkillChange} />
+                    </div>
+                  </div>
+                  <Separator />
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Feature Cards</h3>
+                    <div className="space-y-4">
+                      {aboutState.features.map((feature, index) => (
+                        <div key={index} className="p-4 border rounded-md space-y-4">
+                          <h4 className="font-medium">Card {index + 1}</h4>
+                          <div><Label htmlFor={`feature-icon-${index}`}>Icon Name (from Lucide)</Label><Input id={`feature-icon-${index}`} value={feature.icon} onChange={(e) => handleFeatureChange(index, 'icon', e.target.value)} /></div>
+                          <div><Label htmlFor={`feature-title-${index}`}>Title</Label><Input id={`feature-title-${index}`} value={feature.title} onChange={(e) => handleFeatureChange(index, 'title', e.target.value)} /></div>
+                          <div><Label htmlFor={`feature-desc-${index}`}>Description</Label><Textarea id={`feature-desc-${index}`} value={feature.description} onChange={(e) => handleFeatureChange(index, 'description', e.target.value)} /></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <Button type="submit">Save About</Button>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
+
           <TabsContent value="portfolio">
             <Card>
               <CardHeader><CardTitle>Portfolio Section</CardTitle></CardHeader>
