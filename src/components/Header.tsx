@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
+import { useAuth } from "@/context/AuthContext";
 
 const Header = () => {
+  const { isLoggedIn } = useAuth();
   const navLinks = [
     { name: "Home", href: "#hero" },
     { name: "Portfolio", href: "#portfolio" },
@@ -31,9 +33,15 @@ const Header = () => {
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
-          <Link to="/admin">
-            <Button variant="ghost">Admin Sign In</Button>
-          </Link>
+          {isLoggedIn ? (
+            <Link to="/admin/dashboard">
+              <Button variant="ghost">Dashboard</Button>
+            </Link>
+          ) : (
+            <Link to="/admin">
+              <Button variant="ghost">Admin Sign In</Button>
+            </Link>
+          )}
           <ThemeToggle />
         </div>
       </div>
