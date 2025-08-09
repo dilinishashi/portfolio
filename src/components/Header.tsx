@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 
 const Header = () => {
@@ -28,7 +30,10 @@ const Header = () => {
             ))}
           </nav>
         </div>
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+        <div className="flex flex-1 items-center justify-end space-x-4">
+          <Link to="/admin">
+            <Button variant="ghost">Admin Sign In</Button>
+          </Link>
           <ThemeToggle />
         </div>
       </div>
