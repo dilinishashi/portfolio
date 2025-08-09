@@ -7,7 +7,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, Printer } from "lucide-react";
 
 interface CVViewerProps {
@@ -17,44 +17,50 @@ interface CVViewerProps {
 }
 
 const CVViewer = ({ isOpen, onClose, cvUrl }: CVViewerProps) => {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [objectUrl, setObjectUrl] = useState<string>('');
 
   useEffect(() => {
-    let createdUrl: string | null = null;
+    // This effect creates a browser-friendly URL for the uploaded PDF
+    // to ensure it can be displayed and interacted with safely.
+    let objectUrlToRevoke: string | null = null;
 
-    if (isOpen && cvUrl && cvUrl !== '#' && cvUrl.startsWith('data:')) {
-      const convertDataUrlToBlob = async () => {
-        try {
-          const response = await fetch(cvUrl);
-          const blob = await response.blob();
-          createdUrl = URL.createObjectURL(blob);
-          setObjectUrl(createdUrl);
-        } catch (error) {
-          console.error("Failed to create object URL for PDF:", error);
-          setObjectUrl(cvUrl); // Fallback to the original URL
+    if (isOpen && cvUrl && cvUrl !== '#' && cvUrl.startsWith('data:application/pdf')) {
+      try {
+        const parts = cvUrl.split(',');
+        const base64Data = parts[1];
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
         }
-      };
-      convertDataUrlToBlob();
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        
+        const url = URL.createObjectURL(blob);
+        setObjectUrl(url);
+        objectUrlToRevoke = url;
+      } catch (error) {
+        console.error("Failed to create object URL from data URL:", error);
+        setObjectUrl('');
+      }
     } else if (isOpen && cvUrl && cvUrl !== '#') {
       setObjectUrl(cvUrl);
     } else {
       setObjectUrl('');
     }
 
-    // Cleanup function to prevent memory leaks
     return () => {
-      if (createdUrl) {
-        URL.revokeObjectURL(createdUrl);
+      if (objectUrlToRevoke) {
+        URL.revokeObjectURL(objectUrlToRevoke);
       }
     };
   }, [isOpen, cvUrl]);
 
   const handlePrint = () => {
-    const iframe = iframeRef.current;
-    if (iframe?.contentWindow) {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
+    // Opens the PDF in a new tab, allowing the user to use the browser's native print functionality.
+    // This is the most reliable way to avoid cross-origin security errors.
+    if (objectUrl) {
+      window.open(objectUrl, '_blank');
     }
   };
 
@@ -74,8 +80,7 @@ const CVViewer = ({ isOpen, onClose, cvUrl }: CVViewerProps) => {
         <div className="flex-1 w-full border rounded-md overflow-hidden">
           {hasCv && objectUrl ? (
             <iframe
-              ref={iframeRef}
-              src={objectUrl}
+              src={`${objectUrl}#toolbar=0&navpanes=0`} // Hide the default iframe toolbar
               title="CV"
               className="w-full h-full"
             />
