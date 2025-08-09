@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
-import { useState, FormEvent, ChangeEvent } from 'react';
+import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Separator } from '@/components/ui/separator';
 
@@ -44,6 +44,17 @@ const AdminDashboard = () => {
   const [galleryDescription, setGalleryDescription] = useState(content.gallery.description);
   const [contactTitle, setContactTitle] = useState(content.contact.title);
   const [contactDescription, setContactDescription] = useState(content.contact.description);
+
+  useEffect(() => {
+    setHeroState(content.hero);
+    setAboutState(content.about);
+    setPortfolioTitle(content.portfolio.title);
+    setPortfolioDescription(content.portfolio.description);
+    setGalleryTitle(content.gallery.title);
+    setGalleryDescription(content.gallery.description);
+    setContactTitle(content.contact.title);
+    setContactDescription(content.contact.description);
+  }, [content]);
 
   const handleSave = (section: string, data: any) => {
     updateContent({ [section]: data });
