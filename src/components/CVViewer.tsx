@@ -7,7 +7,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Download, Printer } from "lucide-react";
 
 interface CVViewerProps {
@@ -18,6 +18,37 @@ interface CVViewerProps {
 
 const CVViewer = ({ isOpen, onClose, cvUrl }: CVViewerProps) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [objectUrl, setObjectUrl] = useState<string>('');
+
+  useEffect(() => {
+    let createdUrl: string | null = null;
+
+    if (isOpen && cvUrl && cvUrl !== '#' && cvUrl.startsWith('data:')) {
+      const convertDataUrlToBlob = async () => {
+        try {
+          const response = await fetch(cvUrl);
+          const blob = await response.blob();
+          createdUrl = URL.createObjectURL(blob);
+          setObjectUrl(createdUrl);
+        } catch (error) {
+          console.error("Failed to create object URL for PDF:", error);
+          setObjectUrl(cvUrl); // Fallback to the original URL
+        }
+      };
+      convertDataUrlToBlob();
+    } else if (isOpen && cvUrl && cvUrl !== '#') {
+      setObjectUrl(cvUrl);
+    } else {
+      setObjectUrl('');
+    }
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+      if (createdUrl) {
+        URL.revokeObjectURL(createdUrl);
+      }
+    };
+  }, [isOpen, cvUrl]);
 
   const handlePrint = () => {
     const iframe = iframeRef.current;
@@ -27,7 +58,6 @@ const CVViewer = ({ isOpen, onClose, cvUrl }: CVViewerProps) => {
     }
   };
 
-  // A simple check to see if a real CV has been uploaded
   const hasCv = cvUrl && cvUrl !== '#';
 
   return (
@@ -42,16 +72,16 @@ const CVViewer = ({ isOpen, onClose, cvUrl }: CVViewerProps) => {
           )}
         </DialogHeader>
         <div className="flex-1 w-full border rounded-md overflow-hidden">
-          {hasCv ? (
+          {hasCv && objectUrl ? (
             <iframe
               ref={iframeRef}
-              src={cvUrl}
+              src={objectUrl}
               title="CV"
               className="w-full h-full"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-muted">
-              <p className="text-muted-foreground">No CV has been uploaded yet.</p>
+              <p className="text-muted-foreground">{isOpen && hasCv ? 'Loading CV...' : 'No CV has been uploaded yet.'}</p>
             </div>
           )}
         </div>
@@ -63,7 +93,7 @@ const CVViewer = ({ isOpen, onClose, cvUrl }: CVViewerProps) => {
                 Download
               </a>
             </Button>
-            <Button onClick={handlePrint}>
+            <Button onClick={handlePrint} disabled={!objectUrl}>
               <Printer className="mr-2 h-4 w-4" />
               Print
             </Button>
