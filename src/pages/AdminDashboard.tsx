@@ -8,13 +8,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
 import { useState, FormEvent } from 'react';
 import { showSuccess } from '@/utils/toast';
+import { Separator } from '@/components/ui/separator';
 
 const AdminDashboard = () => {
   const { logout } = useAuth();
   const { content, updateContent } = useContent();
   
-  const [heroTitle, setHeroTitle] = useState(content.hero.title);
-  const [heroSubtitle, setHeroSubtitle] = useState(content.hero.subtitle);
+  // Hero State
+  const [heroState, setHeroState] = useState(content.hero);
+  
+  // Other sections state
   const [aboutTitle, setAboutTitle] = useState(content.about.title);
   const [aboutDescription, setAboutDescription] = useState(content.about.description);
   const [portfolioTitle, setPortfolioTitle] = useState(content.portfolio.title);
@@ -27,6 +30,16 @@ const AdminDashboard = () => {
   const handleSave = (section: string, data: any) => {
     updateContent({ [section]: data });
     showSuccess(`${section.charAt(0).toUpperCase() + section.slice(1)} section updated!`);
+  };
+
+  const handleHeroChange = (field: string, value: string) => {
+    setHeroState(prevState => ({ ...prevState, [field]: value }));
+  };
+
+  const handleSocialChange = (index: number, url: string) => {
+    const newSocials = [...heroState.socials];
+    newSocials[index].url = url;
+    setHeroState(prevState => ({ ...prevState, socials: newSocials }));
   };
 
   return (
@@ -50,17 +63,30 @@ const AdminDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Hero Section</CardTitle>
-                <CardDescription>Update the main title and subtitle of your homepage.</CardDescription>
+                <CardDescription>Update the content for the main hero section of your homepage.</CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={(e: FormEvent) => { e.preventDefault(); handleSave('hero', { title: heroTitle, subtitle: heroSubtitle }); }} className="space-y-4">
-                  <div>
-                    <Label htmlFor="heroTitle">Title</Label>
-                    <Input id="heroTitle" value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} />
+                <form onSubmit={(e: FormEvent) => { e.preventDefault(); handleSave('hero', heroState); }} className="space-y-6">
+                  <div className="space-y-4">
+                    <div><Label htmlFor="heroGreeting">Greeting</Label><Input id="heroGreeting" value={heroState.greeting} onChange={(e) => handleHeroChange('greeting', e.target.value)} /></div>
+                    <div><Label htmlFor="heroName">Name</Label><Input id="heroName" value={heroState.name} onChange={(e) => handleHeroChange('name', e.target.value)} /></div>
+                    <div><Label htmlFor="heroRole">Role</Label><Input id="heroRole" value={heroState.role} onChange={(e) => handleHeroChange('role', e.target.value)} /></div>
+                    <div><Label htmlFor="heroDescription">Description</Label><Textarea id="heroDescription" value={heroState.description} onChange={(e) => handleHeroChange('description', e.target.value)} /></div>
+                    <div><Label htmlFor="heroCvLink">CV Link</Label><Input id="heroCvLink" value={heroState.cvLink} onChange={(e) => handleHeroChange('cvLink', e.target.value)} /></div>
+                    <div><Label htmlFor="heroContactLink">"Get In Touch" Link</Label><Input id="heroContactLink" value={heroState.contactLink} onChange={(e) => handleHeroChange('contactLink', e.target.value)} /></div>
                   </div>
+                  <Separator />
                   <div>
-                    <Label htmlFor="heroSubtitle">Subtitle</Label>
-                    <Input id="heroSubtitle" value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} />
+                    <h3 className="text-lg font-medium mb-2">Social Links</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Update the URLs for your social media icons.</p>
+                    <div className="space-y-4">
+                      {heroState.socials.map((social, index) => (
+                        <div key={index}>
+                          <Label htmlFor={`social-url-${index}`}>{social.name} URL</Label>
+                          <Input id={`social-url-${index}`} value={social.url} onChange={(e) => handleSocialChange(index, e.target.value)} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <Button type="submit">Save Hero</Button>
                 </form>
@@ -68,6 +94,7 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
+          {/* Other Tabs remain the same */}
           <TabsContent value="about">
             <Card>
               <CardHeader><CardTitle>About Section</CardTitle></CardHeader>
@@ -80,7 +107,6 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="portfolio">
             <Card>
               <CardHeader><CardTitle>Portfolio Section</CardTitle></CardHeader>
@@ -93,7 +119,6 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="gallery">
             <Card>
               <CardHeader><CardTitle>Gallery Section</CardTitle></CardHeader>
@@ -106,7 +131,6 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="contact">
             <Card>
               <CardHeader><CardTitle>Contact Section</CardTitle></CardHeader>
