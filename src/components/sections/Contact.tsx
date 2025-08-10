@@ -79,7 +79,7 @@ const Contact = () => {
   return (
     <section id="contact" className="py-20 md:py-32 bg-background">
       <div className="container">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
             Let's Work Together
           </h2>
@@ -90,7 +90,7 @@ const Contact = () => {
 
         <div className="grid md:grid-cols-5 gap-12">
           {/* Left Column: Form */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-3 animate-fade-in" style={{ animationDelay: '200ms' }}>
             <Card className="bg-muted/50">
               <CardHeader>
                 <CardTitle className="text-2xl">Send Me a Message</CardTitle>
@@ -130,7 +130,7 @@ const Contact = () => {
           </div>
 
           {/* Right Column: Get in Touch */}
-          <div className="md:col-span-2 space-y-8">
+          <div className="md:col-span-2 space-y-8 animate-fade-in" style={{ animationDelay: '400ms' }}>
             <div>
               <h3 className="text-2xl font-semibold mb-2">Get in Touch</h3>
               <p className="text-muted-foreground">
