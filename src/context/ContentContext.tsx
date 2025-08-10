@@ -1,5 +1,25 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
+// New types for the gallery
+export interface Photo {
+  id: string;
+  url: string; // base64 data URL
+  caption: string;
+}
+
+export interface Album {
+  id: string;
+  title: string;
+  description: string;
+  photos: Photo[];
+}
+
+interface GalleryContent {
+  title: string;
+  description: string;
+  albums: Album[];
+}
+
 interface SectionContent {
   title: string;
   description: string;
@@ -20,7 +40,7 @@ interface GetInTouchLink {
 
 interface Feature {
   icon: string;
-  title: string;
+  title:string;
   description: string;
 }
 
@@ -45,7 +65,7 @@ interface Content {
   };
   about: AboutContent;
   portfolio: SectionContent;
-  gallery: SectionContent;
+  gallery: GalleryContent;
   contact: SectionContent;
 }
 
@@ -113,6 +133,7 @@ const initialContent: Content = {
   gallery: {
     title: 'Gallery',
     description: 'A collection of my visual work and inspirations. You can edit this text in the admin dashboard.',
+    albums: [],
   },
   contact: {
     title: 'Contact',

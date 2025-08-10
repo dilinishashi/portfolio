@@ -1,5 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
-import { useContent } from '@/context/ContentContext';
+import { useContent, type Album, type Photo } from '@/context/ContentContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Separator } from '@/components/ui/separator';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Trash2, ImagePlus } from 'lucide-react';
 
 type GetInTouchLink = {
   icon: string;
@@ -40,8 +42,7 @@ const AdminDashboard = () => {
   const [aboutState, setAboutState] = useState(content.about);
   const [portfolioTitle, setPortfolioTitle] = useState(content.portfolio.title);
   const [portfolioDescription, setPortfolioDescription] = useState(content.portfolio.description);
-  const [galleryTitle, setGalleryTitle] = useState(content.gallery.title);
-  const [galleryDescription, setGalleryDescription] = useState(content.gallery.description);
+  const [galleryState, setGalleryState] = useState(content.gallery);
   const [contactTitle, setContactTitle] = useState(content.contact.title);
   const [contactDescription, setContactDescription] = useState(content.contact.description);
 
@@ -50,8 +51,7 @@ const AdminDashboard = () => {
     setAboutState(content.about);
     setPortfolioTitle(content.portfolio.title);
     setPortfolioDescription(content.portfolio.description);
-    setGalleryTitle(content.gallery.title);
-    setGalleryDescription(content.gallery.description);
+    setGalleryState(content.gallery);
     setContactTitle(content.contact.title);
     setContactDescription(content.contact.description);
   }, [content]);
@@ -61,22 +61,17 @@ const AdminDashboard = () => {
     showSuccess(`${section.charAt(0).toUpperCase() + section.slice(1)} section updated!`);
   };
 
-  const handleHeroChange = (field: string, value: string) => {
-    setHeroState(prevState => ({ ...prevState, [field]: value }));
-  };
-
+  const handleHeroChange = (field: string, value: string) => setHeroState(p => ({ ...p, [field]: value }));
   const handleSocialChange = (index: number, url: string) => {
     const newSocials = [...heroState.socials];
     newSocials[index].url = url;
-    setHeroState(prevState => ({ ...prevState, socials: newSocials }));
+    setHeroState(p => ({ ...p, socials: newSocials }));
   };
-
   const handleGetInTouchChange = (index: number, field: keyof GetInTouchLink, value: string) => {
     const newLinks = [...heroState.getInTouchLinks];
     newLinks[index] = { ...newLinks[index], [field]: value };
-    setHeroState(prevState => ({ ...prevState, getInTouchLinks: newLinks }));
+    setHeroState(p => ({ ...p, getInTouchLinks: newLinks }));
   };
-
   const handleCvUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -92,20 +87,80 @@ const AdminDashboard = () => {
       reader.readAsDataURL(file);
     }
   };
-
-  const handleAboutChange = (field: keyof AboutContent, value: any) => {
-    setAboutState(prevState => ({ ...prevState, [field]: value }));
-  };
-
+  const handleAboutChange = (field: keyof AboutContent, value: any) => setAboutState(p => ({ ...p, [field]: value }));
   const handleSkillChange = (e: ChangeEvent<HTMLInputElement>) => {
     const skills = e.target.value.split(',').map(skill => skill.trim()).filter(Boolean);
     handleAboutChange('skills', skills);
   };
-
   const handleFeatureChange = (index: number, field: keyof Feature, value: string) => {
     const newFeatures = [...aboutState.features];
     newFeatures[index] = { ...newFeatures[index], [field]: value };
     handleAboutChange('features', newFeatures);
+  };
+
+  // Gallery specific handlers
+  const handleGalleryTextChange = (field: 'title' | 'description', value: string) => {
+    setGalleryState(p => ({ ...p, [field]: value }));
+  };
+
+  const handleCreateAlbum = () => {
+    const newAlbum: Album = {
+      id: crypto.randomUUID(),
+      title: 'New Album',
+      description: 'A brief description of this album.',
+      photos: [],
+    };
+    setGalleryState(p => ({ ...p, albums: [...p.albums, newAlbum] }));
+    showSuccess('New album created. Remember to save!');
+  };
+
+  const handleAlbumChange = (albumId: string, field: 'title' | 'description', value: string) => {
+    setGalleryState(p => ({
+      ...p,
+      albums: p.albums.map(album => album.id === albumId ? { ...album, [field]: value } : album),
+    }));
+  };
+
+  const handleDeleteAlbum = (albumId: string) => {
+    setGalleryState(p => ({ ...p, albums: p.albums.filter(album => album.id !== albumId) }));
+    showSuccess('Album deleted. Remember to save!');
+  };
+
+  const handlePhotoUpload = (albumId: string, e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        showError(`File ${file.name} is not an image.`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newPhoto: Photo = {
+          id: crypto.randomUUID(),
+          url: reader.result as string,
+          caption: file.name,
+        };
+        setGalleryState(p => ({
+          ...p,
+          albums: p.albums.map(album =>
+            album.id === albumId ? { ...album, photos: [...album.photos, newPhoto] } : album
+          ),
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+    showSuccess(`${files.length} photo(s) added. Remember to save!`);
+  };
+
+  const handleDeletePhoto = (albumId: string, photoId: string) => {
+    setGalleryState(p => ({
+      ...p,
+      albums: p.albums.map(album =>
+        album.id === albumId ? { ...album, photos: album.photos.filter(photo => photo.id !== photoId) } : album
+      ),
+    }));
   };
 
   return (
@@ -125,6 +180,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="contact">Contact</TabsTrigger>
           </TabsList>
 
+          {/* Hero, About, Portfolio, Contact Tabs remain the same */}
           <TabsContent value="hero">
             <Card>
               <CardHeader>
@@ -243,18 +299,65 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
           <TabsContent value="gallery">
             <Card>
-              <CardHeader><CardTitle>Gallery Section</CardTitle></CardHeader>
-              <CardContent>
-                <form onSubmit={(e: FormEvent) => { e.preventDefault(); handleSave('gallery', { title: galleryTitle, description: galleryDescription }); }} className="space-y-4">
-                  <div><Label htmlFor="galleryTitle">Title</Label><Input id="galleryTitle" value={galleryTitle} onChange={(e) => setGalleryTitle(e.target.value)} /></div>
-                  <div><Label htmlFor="galleryDescription">Description</Label><Textarea id="galleryDescription" value={galleryDescription} onChange={(e) => setGalleryDescription(e.target.value)} /></div>
-                  <Button type="submit">Save Gallery</Button>
-                </form>
+              <CardHeader>
+                <CardTitle>Gallery Section</CardTitle>
+                <CardDescription>Manage the title, description, and photo albums for your gallery.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4 p-4 border rounded-md">
+                  <h3 className="text-lg font-medium">Gallery Details</h3>
+                  <div><Label htmlFor="galleryTitle">Title</Label><Input id="galleryTitle" value={galleryState.title} onChange={(e) => handleGalleryTextChange('title', e.target.value)} /></div>
+                  <div><Label htmlFor="galleryDescription">Description</Label><Textarea id="galleryDescription" value={galleryState.description} onChange={(e) => handleGalleryTextChange('description', e.target.value)} /></div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium">Photo Albums</h3>
+                    <Button onClick={handleCreateAlbum}>Create New Album</Button>
+                  </div>
+                  <Accordion type="single" collapsible className="w-full">
+                    {galleryState.albums.map(album => (
+                      <AccordionItem value={album.id} key={album.id}>
+                        <AccordionTrigger>{album.title}</AccordionTrigger>
+                        <AccordionContent className="space-y-6 p-4">
+                          <div className="space-y-4">
+                            <div><Label htmlFor={`album-title-${album.id}`}>Album Title</Label><Input id={`album-title-${album.id}`} value={album.title} onChange={(e) => handleAlbumChange(album.id, 'title', e.target.value)} /></div>
+                            <div><Label htmlFor={`album-desc-${album.id}`}>Album Description</Label><Textarea id={`album-desc-${album.id}`} value={album.description} onChange={(e) => handleAlbumChange(album.id, 'description', e.target.value)} /></div>
+                          </div>
+                          <Separator />
+                          <div>
+                            <Label htmlFor={`photo-upload-${album.id}`} className="flex items-center gap-2 text-sm font-medium cursor-pointer text-primary hover:underline">
+                              <ImagePlus className="w-4 h-4" /> Add Photos to this Album
+                            </Label>
+                            <Input id={`photo-upload-${album.id}`} type="file" multiple accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(album.id, e)} />
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            {album.photos.map(photo => (
+                              <div key={photo.id} className="relative group">
+                                <img src={photo.url} alt={photo.caption} className="w-full h-24 object-cover rounded-md" />
+                                <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeletePhoto(album.id, photo.id)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                          <Separator />
+                          <Button variant="destructive" onClick={() => handleDeleteAlbum(album.id)}>Delete Album</Button>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </div>
+                <Button onClick={() => handleSave('gallery', galleryState)}>Save Gallery</Button>
               </CardContent>
             </Card>
           </TabsContent>
+
           <TabsContent value="contact">
             <Card>
               <CardHeader><CardTitle>Contact Section</CardTitle></CardHeader>
