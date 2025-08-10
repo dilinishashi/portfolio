@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
 // New types for the gallery
 export interface Photo {
@@ -143,8 +143,28 @@ const initialContent: Content = {
 
 const ContentContext = createContext<ContentContextType | null>(null);
 
+const CONTENT_STORAGE_KEY = 'portfolio-content';
+
 export const ContentProvider = ({ children }: { children: ReactNode }) => {
-  const [content, setContent] = useState<Content>(initialContent);
+  const [content, setContent] = useState<Content>(() => {
+    try {
+      const storedContent = localStorage.getItem(CONTENT_STORAGE_KEY);
+      if (storedContent) {
+        const parsedContent = JSON.parse(storedContent);
+        // Deep merge stored content with initial content to prevent crashes if the structure changes
+        return {
+          hero: { ...initialContent.hero, ...parsedContent.hero },
+          about: { ...initialContent.about, ...parsedContent.about },
+          portfolio: { ...initialContent.portfolio, ...parsedContent.portfolio },
+          gallery: { ...initialContent.gallery, ...parsedContent.gallery },
+          contact: { ...initialContent.contact, ...parsedContent.contact },
+        };
+      }
+    } catch (error) {
+      console.error("Failed to parse content from localStorage", error);
+    }
+    return initialContent;
+  });
 
   const updateContent = (newContent: Partial<Content>) => {
     setContent(prevContent => {
@@ -158,6 +178,13 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
                 };
             }
         }
+        
+        try {
+          localStorage.setItem(CONTENT_STORAGE_KEY, JSON.stringify(updatedContent));
+        } catch (error) {
+          console.error("Failed to save content to localStorage", error);
+        }
+
         return updatedContent;
     });
   };
