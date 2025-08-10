@@ -24,11 +24,11 @@ const Gallery = () => {
           </div>
 
           {albums && albums.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="flex space-x-8 overflow-x-auto pb-4">
               {albums.map((album, index) => (
                 <div
                   key={album.id}
-                  className="animate-fade-in cursor-pointer group"
+                  className="animate-fade-in cursor-pointer group flex-shrink-0 w-[300px] md:w-[350px]"
                   style={{ animationDelay: `${index * 150}ms` }}
                   onClick={() => setSelectedAlbum(album)}
                 >
