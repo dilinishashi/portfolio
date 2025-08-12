@@ -244,7 +244,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ContentContext.Provider value={{ content: content || initialContent, updateContent: mutate }}>
       {children}
-    </Content-Provider>
+    </ContentContext.Provider>
   );
 };
 
