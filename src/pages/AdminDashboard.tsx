@@ -196,9 +196,10 @@ const AdminDashboard = () => {
         upsert: true,
       });
 
+    setIsUploadingAudio(false);
+
     if (uploadError) {
       showError(`Audio upload failed: ${uploadError.message}`);
-      setIsUploadingAudio(false);
       return;
     }
 
@@ -206,9 +207,11 @@ const AdminDashboard = () => {
       .from('site_assets')
       .getPublicUrl(filePath);
 
-    setLoginErrorState(p => ({ ...p, errorSoundUrl: data.publicUrl }));
-    setIsUploadingAudio(false);
-    showSuccess("Audio file uploaded. Save settings to apply the change.");
+    const newLoginErrorState = { ...loginErrorState, errorSoundUrl: data.publicUrl };
+    
+    setLoginErrorState(newLoginErrorState);
+    
+    handleSave('loginError', newLoginErrorState);
   };
 
   return (
