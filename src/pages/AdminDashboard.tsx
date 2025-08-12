@@ -1,5 +1,5 @@
 import { useSupabase } from '@/context/SupabaseProvider';
-import { useContent, type Album, type Photo } from '@/context/ContentContext';
+import { useContent, type Album, type Photo, type LoginErrorContent } from '@/context/ContentContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,6 +45,7 @@ const AdminDashboard = () => {
   const [galleryState, setGalleryState] = useState(content.gallery);
   const [contactTitle, setContactTitle] = useState(content.contact.title);
   const [contactDescription, setContactDescription] = useState(content.contact.description);
+  const [loginErrorState, setLoginErrorState] = useState(content.loginError);
 
   useEffect(() => {
     setHeroState(content.hero);
@@ -54,6 +55,7 @@ const AdminDashboard = () => {
     setGalleryState(content.gallery);
     setContactTitle(content.contact.title);
     setContactDescription(content.contact.description);
+    setLoginErrorState(content.loginError);
   }, [content]);
 
   const handleLogout = async () => {
@@ -172,6 +174,10 @@ const AdminDashboard = () => {
     }));
   };
 
+  const handleLoginErrorChange = (field: keyof LoginErrorContent, value: string) => {
+    setLoginErrorState(p => ({ ...p, [field]: value }));
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <header className="flex justify-between items-center mb-8">
@@ -181,12 +187,13 @@ const AdminDashboard = () => {
       
       <main>
         <Tabs defaultValue="hero" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
             <TabsTrigger value="hero">Hero</TabsTrigger>
             <TabsTrigger value="about">About</TabsTrigger>
             <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
             <TabsTrigger value="gallery">Gallery</TabsTrigger>
             <TabsTrigger value="contact">Contact</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           {/* Hero, About, Portfolio, Contact Tabs remain the same */}
@@ -375,6 +382,35 @@ const AdminDashboard = () => {
                   <div><Label htmlFor="contactTitle">Title</Label><Input id="contactTitle" value={contactTitle} onChange={(e) => setContactTitle(e.target.value)} /></div>
                   <div><Label htmlFor="contactDescription">Description</Label><Textarea id="contactDescription" value={contactDescription} onChange={(e) => setContactDescription(e.target.value)} /></div>
                   <Button type="submit">Save Contact</Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle>Site Settings</CardTitle>
+                <CardDescription>Manage site-wide settings like the login error message.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={(e: FormEvent) => { e.preventDefault(); handleSave('loginError', loginErrorState); }} className="space-y-6">
+                  <h3 className="text-lg font-medium">Login Error Message</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="loginErrorTitle">Modal Title</Label>
+                      <Input id="loginErrorTitle" value={loginErrorState.title} onChange={(e) => handleLoginErrorChange('title', e.target.value)} />
+                    </div>
+                    <div>
+                      <Label htmlFor="loginErrorMessage">Error Message</Label>
+                      <Input id="loginErrorMessage" value={loginErrorState.message} onChange={(e) => handleLoginErrorChange('message', e.target.value)} />
+                    </div>
+                    <div>
+                      <Label htmlFor="loginErrorEmoji">Emoji</Label>
+                      <Input id="loginErrorEmoji" value={loginErrorState.emoji} onChange={(e) => handleLoginErrorChange('emoji', e.target.value)} />
+                    </div>
+                  </div>
+                  <Button type="submit">Save Settings</Button>
                 </form>
               </CardContent>
             </Card>

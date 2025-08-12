@@ -68,12 +68,19 @@ export type ContactContent = {
   description:string;
 };
 
+export type LoginErrorContent = {
+  title: string;
+  message: string;
+  emoji: string;
+};
+
 export type Content = {
   hero: HeroContent;
   about: AboutContent;
   portfolio: PortfolioContent;
   gallery: GalleryContent;
   contact: ContactContent;
+  loginError: LoginErrorContent;
 };
 
 type ContentContextType = {
@@ -146,6 +153,11 @@ const initialContent: Content = {
   contact: {
     title: "Get In Touch",
     description: "Feel free to reach out to me for any inquiries or collaborations.",
+  },
+  loginError: {
+    title: "Access Denied",
+    message: "You are not Inamulhasan!",
+    emoji: "😠",
   },
 };
 

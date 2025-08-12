@@ -8,9 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { showError } from '@/utils/toast';
 import LoginErrorModal from '@/components/LoginErrorModal';
+import { useContent } from '@/context/ContentContext';
 
 const AdminLogin = () => {
   const { supabase } = useSupabase();
+  const { content } = useContent();
+  const { loginError } = content;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -85,7 +88,10 @@ const AdminLogin = () => {
       </div>
       <LoginErrorModal 
         isOpen={isErrorModalOpen} 
-        onClose={() => setIsErrorModalOpen(false)} 
+        onClose={() => setIsErrorModalOpen(false)}
+        title={loginError.title}
+        message={loginError.message}
+        emoji={loginError.emoji}
       />
     </>
   );
