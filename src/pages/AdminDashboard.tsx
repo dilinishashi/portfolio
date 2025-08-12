@@ -1,4 +1,4 @@
-import { useAuth } from '@/context/AuthContext';
+import { useSupabase } from '@/context/SupabaseProvider';
 import { useContent, type Album, type Photo } from '@/context/ContentContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,7 @@ type AboutContent = {
 };
 
 const AdminDashboard = () => {
-  const { logout } = useAuth();
+  const { supabase } = useSupabase();
   const { content, updateContent } = useContent();
   
   const [heroState, setHeroState] = useState(content.hero);
@@ -55,6 +55,15 @@ const AdminDashboard = () => {
     setContactTitle(content.contact.title);
     setContactDescription(content.contact.description);
   }, [content]);
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      showError(error.message);
+    } else {
+      showSuccess("Logged out successfully!");
+    }
+  };
 
   const handleSave = (section: string, data: any) => {
     updateContent({ [section]: data });
@@ -167,7 +176,7 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <header className="flex justify-between items-center mb-8">
         <h1 className="text-2xl md:text-4xl font-bold">Admin Dashboard</h1>
-        <Button onClick={logout}>Logout</Button>
+        <Button onClick={handleLogout}>Logout</Button>
       </header>
       
       <main>

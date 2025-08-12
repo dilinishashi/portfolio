@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
-import { useAuth } from "@/context/AuthContext";
+import { useSupabase } from "@/context/SupabaseProvider";
 
 const Header = () => {
-  const { isLoggedIn } = useAuth();
+  const { session } = useSupabase();
   const navLinks = [
     { name: "Home", href: "#hero" },
     { name: "About", href: "#about" },
@@ -32,7 +32,7 @@ const Header = () => {
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
-          {isLoggedIn ? (
+          {session ? (
             <Link to="/admin/dashboard">
               <Button variant="ghost">Dashboard</Button>
             </Link>
@@ -46,6 +46,3 @@ const Header = () => {
       </div>
     </header>
   );
-};
-
-export default Header;

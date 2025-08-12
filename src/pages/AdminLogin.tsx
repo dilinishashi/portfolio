@@ -1,33 +1,14 @@
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Link, useNavigate } from "react-router-dom";
-import { useState, FormEvent, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { useSupabase } from '@/context/SupabaseProvider';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useTheme } from 'next-themes';
 
 const AdminLogin = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const { login, isLoggedIn } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      navigate('/admin/dashboard');
-    }
-  }, [isLoggedIn, navigate]);
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    login(email, password);
-  };
+  const { supabase } = useSupabase();
+  const { theme } = useTheme();
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
@@ -35,39 +16,17 @@ const AdminLogin = () => {
         <CardHeader>
           <CardTitle className="text-2xl">Admin Login</CardTitle>
           <CardDescription>
-            Enter your credentials to access the admin panel.
+            Sign in to manage your portfolio content.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="hasan.bose1@gmail.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  required 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <Button type="submit" className="w-full">
-                Sign in
-              </Button>
-            </div>
-          </form>
-          <div className="mt-4 text-center text-sm">
+          <Auth
+            supabaseClient={supabase}
+            appearance={{ theme: ThemeSupa }}
+            providers={[]}
+            theme={theme === 'dark' ? 'dark' : 'light'}
+          />
+           <div className="mt-4 text-center text-sm">
             <Link to="/" className="underline">
               Back to main site
             </Link>
