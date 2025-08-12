@@ -26,6 +26,7 @@ export type HeroContent = {
   socials: SocialLink[];
   getInTouchLinks: GetInTouchLink[];
   cvLink: string;
+  avatarUrl: string;
 };
 
 export type Feature = {
@@ -115,6 +116,7 @@ const initialContent: Content = {
       { icon: "Clapperboard", name: "TikTok", url: "#", color: "bg-black hover:bg-gray-800 text-white" },
     ],
     cvLink: "#",
+    avatarUrl: "https://via.placeholder.com/400x400?text=Your+Photo",
   },
   about: {
     title: "About Me",

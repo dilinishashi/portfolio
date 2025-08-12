@@ -98,6 +98,21 @@ const AdminDashboard = () => {
       reader.readAsDataURL(file);
     }
   };
+  const handleAvatarUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        showError('Please upload an image file (e.g., JPG, PNG, GIF).');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        handleHeroChange('avatarUrl', reader.result as string);
+        showSuccess("Avatar image uploaded. Click 'Save Hero' to apply changes.");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   const handleAboutChange = (field: keyof AboutContent, value: any) => setAboutState(p => ({ ...p, [field]: value }));
   const handleSkillChange = (e: ChangeEvent<HTMLInputElement>) => {
     const skills = e.target.value.split(',').map(skill => skill.trim()).filter(Boolean);
@@ -242,6 +257,11 @@ const AdminDashboard = () => {
                       <Label htmlFor="cvUpload">Upload CV (PDF only)</Label>
                       <Input id="cvUpload" type="file" accept="application/pdf" onChange={handleCvUpload} className="mt-1" />
                       {heroState.cvLink && heroState.cvLink !== '#' && <p className="text-sm text-muted-foreground mt-2">A CV is currently uploaded. Uploading a new one will replace it.</p>}
+                    </div>
+                    <div>
+                      <Label htmlFor="avatarUpload">Upload Profile Picture (Image)</Label>
+                      <Input id="avatarUpload" type="file" accept="image/*" onChange={handleAvatarUpload} className="mt-1" />
+                      {heroState.avatarUrl && <p className="text-sm text-muted-foreground mt-2">An avatar is currently set. Uploading a new one will replace it.</p>}
                     </div>
                   </div>
                   <Separator />
