@@ -5,6 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
 
 interface LoginErrorModalProps {
   isOpen: boolean;
@@ -12,6 +13,15 @@ interface LoginErrorModalProps {
 }
 
 const LoginErrorModal = ({ isOpen, onClose }: LoginErrorModalProps) => {
+  useEffect(() => {
+    if (isOpen) {
+      const audio = new Audio('/error-sound.mp3');
+      audio.play().catch(error => {
+        console.error("Audio playback failed. Make sure the user has interacted with the page.", error);
+      });
+    }
+  }, [isOpen]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
