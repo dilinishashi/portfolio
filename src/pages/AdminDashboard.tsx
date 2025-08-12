@@ -10,7 +10,7 @@ import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Trash2, ImagePlus } from 'lucide-react';
+import { Trash2, ImagePlus, Upload } from 'lucide-react';
 
 type GetInTouchLink = {
   icon: string;
@@ -46,6 +46,7 @@ const AdminDashboard = () => {
   const [contactTitle, setContactTitle] = useState(content.contact.title);
   const [contactDescription, setContactDescription] = useState(content.contact.description);
   const [loginErrorState, setLoginErrorState] = useState(content.loginError);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
 
   useEffect(() => {
     setHeroState(content.hero);
@@ -69,7 +70,6 @@ const AdminDashboard = () => {
 
   const handleSave = (section: string, data: any) => {
     updateContent({ [section]: data });
-    showSuccess(`${section.charAt(0).toUpperCase() + section.slice(1)} section updated!`);
   };
 
   const handleHeroChange = (field: string, value: string) => setHeroState(p => ({ ...p, [field]: value }));
@@ -109,7 +109,6 @@ const AdminDashboard = () => {
     handleAboutChange('features', newFeatures);
   };
 
-  // Gallery specific handlers
   const handleGalleryTextChange = (field: 'title' | 'description', value: string) => {
     setGalleryState(p => ({ ...p, [field]: value }));
   };
@@ -178,6 +177,40 @@ const AdminDashboard = () => {
     setLoginErrorState(p => ({ ...p, [field]: value }));
   };
 
+  const handleAudioUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('audio/')) {
+      showError('Please upload a valid audio file.');
+      return;
+    }
+
+    setIsUploadingAudio(true);
+    const filePath = `public/error-sound.mp3`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('site_assets')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      showError(`Audio upload failed: ${uploadError.message}`);
+      setIsUploadingAudio(false);
+      return;
+    }
+
+    const { data } = supabase.storage
+      .from('site_assets')
+      .getPublicUrl(filePath);
+
+    setLoginErrorState(p => ({ ...p, errorSoundUrl: data.publicUrl }));
+    setIsUploadingAudio(false);
+    showSuccess("Audio file uploaded. Save settings to apply the change.");
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <header className="flex justify-between items-center mb-8">
@@ -196,7 +229,6 @@ const AdminDashboard = () => {
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
-          {/* Hero, About, Portfolio, Contact Tabs remain the same */}
           <TabsContent value="hero">
             <Card>
               <CardHeader>
@@ -391,7 +423,7 @@ const AdminDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Site Settings</CardTitle>
-                <CardDescription>Manage site-wide settings like the login error message.</CardDescription>
+                <CardDescription>Manage site-wide settings like the login error message and sound.</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={(e: FormEvent) => { e.preventDefault(); handleSave('loginError', loginErrorState); }} className="space-y-6">
@@ -409,6 +441,21 @@ const AdminDashboard = () => {
                       <Label htmlFor="loginErrorEmoji">Emoji</Label>
                       <Input id="loginErrorEmoji" value={loginErrorState.emoji} onChange={(e) => handleLoginErrorChange('emoji', e.target.value)} />
                     </div>
+                  </div>
+                  <Separator />
+                  <h3 className="text-lg font-medium">Login Error Sound</h3>
+                  <div className="space-y-2">
+                    <Label htmlFor="audioUpload">Upload Audio File</Label>
+                    <div className="flex items-center gap-4">
+                      <Input id="audioUpload" type="file" accept="audio/*" onChange={handleAudioUpload} disabled={isUploadingAudio} className="flex-1" />
+                      {isUploadingAudio && <Upload className="animate-spin" />}
+                    </div>
+                    {loginErrorState.errorSoundUrl && (
+                      <div className="text-sm text-muted-foreground mt-2">
+                        <p>Current sound:</p>
+                        <audio src={loginErrorState.errorSoundUrl} controls className="w-full mt-1 h-8" />
+                      </div>
+                    )}
                   </div>
                   <Button type="submit">Save Settings</Button>
                 </form>

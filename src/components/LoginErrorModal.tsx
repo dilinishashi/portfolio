@@ -13,17 +13,18 @@ interface LoginErrorModalProps {
   title: string;
   message: string;
   emoji: string;
+  errorSoundUrl: string;
 }
 
-const LoginErrorModal = ({ isOpen, onClose, title, message, emoji }: LoginErrorModalProps) => {
+const LoginErrorModal = ({ isOpen, onClose, title, message, emoji, errorSoundUrl }: LoginErrorModalProps) => {
   useEffect(() => {
-    if (isOpen) {
-      const audio = new Audio('/error-sound.mp3');
+    if (isOpen && errorSoundUrl) {
+      const audio = new Audio(errorSoundUrl);
       audio.play().catch(error => {
-        console.error("Audio playback failed. Make sure the user has interacted with the page.", error);
+        console.error("Audio playback failed. User may need to interact with the page first.", error);
       });
     }
-  }, [isOpen]);
+  }, [isOpen, errorSoundUrl]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

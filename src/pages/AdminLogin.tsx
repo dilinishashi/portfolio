@@ -92,6 +92,7 @@ const AdminLogin = () => {
         title={loginError.title}
         message={loginError.message}
         emoji={loginError.emoji}
+        errorSoundUrl={loginError.errorSoundUrl}
       />
     </>
   );

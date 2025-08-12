@@ -76,6 +76,7 @@ export type LoginErrorContent = {
   title: string;
   message: string;
   emoji: string;
+  errorSoundUrl: string;
 };
 
 export type Content = {
@@ -162,6 +163,7 @@ const initialContent: Content = {
     title: "Access Denied",
     message: "You are not Inamulhasan!",
     emoji: "😠",
+    errorSoundUrl: "",
   },
 };
 
