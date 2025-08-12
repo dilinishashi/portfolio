@@ -411,7 +411,7 @@ const AdminDashboard = () => {
                   <Button type="submit">Save Contact</Button>
                 </form>
               </CardContent>
-            </card>
+            </Card>
           </TabsContent>
 
           <TabsContent value="settings">
