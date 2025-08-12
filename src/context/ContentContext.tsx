@@ -1,4 +1,8 @@
 import { createContext, useState, useContext, ReactNode } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { showSuccess, showError } from '@/utils/toast';
+import { Loader2 } from 'lucide-react';
 
 // Define types for our content structure
 export type SocialLink = {
@@ -161,29 +165,79 @@ const initialContent: Content = {
   },
 };
 
+const contentQueryKey = ['portfolioContent'];
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
 export const ContentProvider = ({ children }: { children: ReactNode }) => {
-  const [content, setContent] = useState<Content>(() => {
-    try {
-      const savedContent = localStorage.getItem('portfolioContent');
-      return savedContent ? JSON.parse(savedContent) : initialContent;
-    } catch (error) {
-      console.error("Failed to parse content from localStorage", error);
+  const queryClient = useQueryClient();
+
+  const { data: content, isLoading, isError } = useQuery<Content>({
+    queryKey: contentQueryKey,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('portfolio_content')
+        .select('content')
+        .eq('id', 1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found, which is fine on first load
+        console.error("Error fetching content:", error);
+        throw new Error(error.message);
+      }
+      
+      if (data?.content) {
+        return data.content as Content;
+      }
+      
+      // If no content in DB, return the default initial content.
+      // The first save action will create the record in the database.
       return initialContent;
+    },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+
+  const { mutate } = useMutation({
+    mutationFn: async (newContent: Partial<Content>) => {
+      // Ensure we have the full, most recent content object before merging
+      const currentContent = queryClient.getQueryData<Content>(contentQueryKey) || initialContent;
+      const updatedContent = { ...currentContent, ...newContent };
+      
+      const { error } = await supabase
+        .from('portfolio_content')
+        .upsert({ id: 1, content: updatedContent }, { onConflict: 'id' });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      return updatedContent;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(contentQueryKey, data);
+      showSuccess("Content saved to database!");
+    },
+    onError: (error) => {
+      showError(`Failed to save content: ${error.message}`);
     }
   });
 
-  const updateContent = (newContent: Partial<Content>) => {
-    setContent(prevContent => {
-      const updated = { ...prevContent, ...newContent };
-      localStorage.setItem('portfolioContent', JSON.stringify(updated));
-      return updated;
-    });
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+        <div className="flex items-center justify-center h-screen bg-background text-destructive">
+            <p>Error: Could not load website content from the database.</p>
+        </div>
+    );
+  }
 
   return (
-    <ContentContext.Provider value={{ content, updateContent }}>
+    <ContentContext.Provider value={{ content: content || initialContent, updateContent: mutate }}>
       {children}
     </ContentContext.Provider>
   );
