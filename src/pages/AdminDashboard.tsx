@@ -10,7 +10,7 @@ import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Trash2, ImagePlus, Upload } from 'lucide-react';
+import { Trash2, ImagePlus, Upload, Loader2 } from 'lucide-react';
 
 type GetInTouchLink = {
   icon: string;
@@ -46,7 +46,7 @@ const AdminDashboard = () => {
   const [contactTitle, setContactTitle] = useState(content.contact.title);
   const [contactDescription, setContactDescription] = useState(content.contact.description);
   const [loginErrorState, setLoginErrorState] = useState(content.loginError);
-  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
 
   useEffect(() => {
     setHeroState(content.hero);
@@ -177,7 +177,7 @@ const AdminDashboard = () => {
     setLoginErrorState(p => ({ ...p, [field]: value }));
   };
 
-  const handleAudioUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+  const handleAudioUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -186,39 +186,24 @@ const AdminDashboard = () => {
       return;
     }
 
-    setIsUploadingAudio(true);
-    const filePath = `error-sound.mp3`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('site_assets')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true,
-      });
-
-    if (uploadError) {
-      setIsUploadingAudio(false);
-      showError(`Audio upload failed: ${uploadError.message}`);
-      return;
-    }
-
-    const { data } = supabase.storage
-      .from('site_assets')
-      .getPublicUrl(filePath);
-
-    setIsUploadingAudio(false);
-
-    if (!data.publicUrl) {
-        showError('Could not get public URL for the uploaded file. Please check storage permissions.');
-        return;
-    }
+    setIsProcessingAudio(true);
+    const reader = new FileReader();
     
-    const urlWithCacheBuster = `${data.publicUrl}?t=${new Date().getTime()}`;
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      const newLoginErrorState = { ...loginErrorState, errorSoundUrl: dataUrl };
+      setLoginErrorState(newLoginErrorState);
+      handleSave('loginError', newLoginErrorState);
+      setIsProcessingAudio(false);
+      showSuccess("Audio file updated and saved automatically.");
+    };
 
-    const newLoginErrorState = { ...loginErrorState, errorSoundUrl: urlWithCacheBuster };
-    
-    setLoginErrorState(newLoginErrorState);
-    handleSave('loginError', newLoginErrorState);
+    reader.onerror = () => {
+      showError("Failed to read the audio file.");
+      setIsProcessingAudio(false);
+    };
+
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -426,7 +411,7 @@ const AdminDashboard = () => {
                   <Button type="submit">Save Contact</Button>
                 </form>
               </CardContent>
-            </Card>
+            </card>
           </TabsContent>
 
           <TabsContent value="settings">
@@ -457,8 +442,8 @@ const AdminDashboard = () => {
                   <div className="space-y-2">
                     <Label htmlFor="audioUpload">Upload Audio File</Label>
                     <div className="flex items-center gap-4">
-                      <Input id="audioUpload" type="file" accept="audio/*" onChange={handleAudioUpload} disabled={isUploadingAudio} className="flex-1" />
-                      {isUploadingAudio && <Upload className="animate-spin" />}
+                      <Input id="audioUpload" type="file" accept="audio/*" onChange={handleAudioUpload} disabled={isProcessingAudio} className="flex-1" />
+                      {isProcessingAudio && <Loader2 className="animate-spin" />}
                     </div>
                     {loginErrorState.errorSoundUrl && (
                       <div className="text-sm text-muted-foreground mt-2">
