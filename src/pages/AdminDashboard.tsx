@@ -124,6 +124,22 @@ const AdminDashboard = () => {
     handleAboutChange('features', newFeatures);
   };
 
+  const handleAddFeature = () => {
+    const newFeature: Feature = {
+      icon: 'PlusCircle',
+      title: 'New Feature',
+      description: 'A short description of this feature.',
+    };
+    handleAboutChange('features', [...aboutState.features, newFeature]);
+    showSuccess('New feature card added. Remember to save your changes!');
+  };
+
+  const handleDeleteFeature = (indexToDelete: number) => {
+    const newFeatures = aboutState.features.filter((_, index) => index !== indexToDelete);
+    handleAboutChange('features', newFeatures);
+    showSuccess('Feature card deleted. Remember to save your changes!');
+  };
+
   const handleGalleryTextChange = (field: 'title' | 'description', value: string) => {
     setGalleryState(p => ({ ...p, [field]: value }));
   };
@@ -332,11 +348,27 @@ const AdminDashboard = () => {
                   </div>
                   <Separator />
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Feature Cards</h3>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-medium">Feature Cards</h3>
+                      <Button type="button" variant="outline" onClick={handleAddFeature}>
+                        Add Feature
+                      </Button>
+                    </div>
                     <div className="space-y-4">
                       {aboutState.features.map((feature, index) => (
                         <div key={index} className="p-4 border rounded-md space-y-4">
-                          <h4 className="font-medium">Card {index + 1}</h4>
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-medium">Card {index + 1}</h4>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteFeature(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                           <div><Label htmlFor={`feature-icon-${index}`}>Icon Name (from Lucide)</Label><Input id={`feature-icon-${index}`} value={feature.icon} onChange={(e) => handleFeatureChange(index, 'icon', e.target.value)} /></div>
                           <div><Label htmlFor={`feature-title-${index}`}>Title</Label><Input id={`feature-title-${index}`} value={feature.title} onChange={(e) => handleFeatureChange(index, 'title', e.target.value)} /></div>
                           <div><Label htmlFor={`feature-desc-${index}`}>Description</Label><Textarea id={`feature-desc-${index}`} value={feature.description} onChange={(e) => handleFeatureChange(index, 'description', e.target.value)} /></div>

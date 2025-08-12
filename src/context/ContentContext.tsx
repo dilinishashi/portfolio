@@ -128,6 +128,7 @@ const initialContent: Content = {
       { icon: "ClipboardCheck", title: "Test Planning", description: "Creating detailed and effective test strategies." },
       { icon: "Bot", title: "Test Automation", description: "Developing scripts to automate testing processes." },
       { icon: "Bug", title: "Defect Tracking", description: "Managing and tracking bugs from discovery to resolution." },
+      { icon: "Handshake", title: "Collaboration", description: "Working closely with teams to ensure quality standards." }
     ],
   },
   portfolio: {
@@ -243,7 +244,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ContentContext.Provider value={{ content: content || initialContent, updateContent: mutate }}>
       {children}
-    </ContentContext.Provider>
+    </Content-Provider>
   );
 };
 
