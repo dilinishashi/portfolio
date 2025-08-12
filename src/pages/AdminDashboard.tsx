@@ -187,7 +187,7 @@ const AdminDashboard = () => {
     }
 
     setIsUploadingAudio(true);
-    const filePath = `public/error-sound.mp3`;
+    const filePath = `error-sound.mp3`;
 
     const { error: uploadError } = await supabase.storage
       .from('site_assets')
@@ -196,9 +196,8 @@ const AdminDashboard = () => {
         upsert: true,
       });
 
-    setIsUploadingAudio(false);
-
     if (uploadError) {
+      setIsUploadingAudio(false);
       showError(`Audio upload failed: ${uploadError.message}`);
       return;
     }
@@ -207,10 +206,18 @@ const AdminDashboard = () => {
       .from('site_assets')
       .getPublicUrl(filePath);
 
-    const newLoginErrorState = { ...loginErrorState, errorSoundUrl: data.publicUrl };
+    setIsUploadingAudio(false);
+
+    if (!data.publicUrl) {
+        showError('Could not get public URL for the uploaded file. Please check storage permissions.');
+        return;
+    }
+    
+    const urlWithCacheBuster = `${data.publicUrl}?t=${new Date().getTime()}`;
+
+    const newLoginErrorState = { ...loginErrorState, errorSoundUrl: urlWithCacheBuster };
     
     setLoginErrorState(newLoginErrorState);
-    
     handleSave('loginError', newLoginErrorState);
   };
 
