@@ -39,7 +39,7 @@ const GetInTouchModal = ({ isOpen, onClose, links }: GetInTouchModalProps) => {
               target="_blank"
               rel="noopener noreferrer"
               className={cn(
-                "flex items-center p-4 rounded-lg transition-colors font-medium",
+                "flex items-center p-4 rounded-lg transition-colors font-medium text-white",
                 link.color
               )}
             >

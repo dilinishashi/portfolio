@@ -65,7 +65,7 @@ export type GalleryContent = {
 
 export type ContactContent = {
   title: string;
-  description: string;
+  description:string;
 };
 
 export type Content = {
@@ -86,31 +86,34 @@ const initialContent: Content = {
   hero: {
     greeting: "Hello, I'm",
     name: "Hasan Bose",
-    role: "Full-Stack Developer",
-    description: "I design and build beautiful and responsive web applications.",
+    role: "Software Quality Assurance Engineer",
+    description: "I ensure software quality through meticulous testing and attention to detail.",
     socials: [
       { name: "GitHub", icon: "Github", url: "https://github.com/your-profile" },
-      { name: "Facebook", icon: "Facebook", url: "#" },
-      { name: "Instagram", icon: "Instagram", url: "#" },
+      { name: "Email", icon: "Mail", url: "mailto:your.email@example.com" },
       { name: "LinkedIn", icon: "Linkedin", url: "#" },
+      { name: "WhatsApp", icon: "MessageCircle", url: "https://wa.me/yourphonenumber" },
     ],
     getInTouchLinks: [
-      { icon: "Mail", name: "Email", url: "mailto:your.email@example.com", color: "bg-red-500 hover:bg-red-600" },
-      { icon: "MessageSquare", name: "Telegram", url: "https://t.me/yourusername", color: "bg-sky-500 hover:bg-sky-600" },
-      { icon: "Linkedin", name: "LinkedIn", url: "https://linkedin.com/in/your-profile", color: "bg-blue-600 hover:bg-blue-700" },
+      { icon: "Mail", name: "Email", url: "mailto:your.email@example.com", color: "bg-red-500 hover:bg-red-600 text-white" },
+      { icon: "Send", name: "Telegram", url: "https://t.me/yourusername", color: "bg-sky-500 hover:bg-sky-600 text-white" },
+      { icon: "MessageCircle", name: "WhatsApp", url: "https://wa.me/yourphonenumber", color: "bg-green-500 hover:bg-green-600 text-white" },
+      { icon: "Facebook", name: "Facebook", url: "#", color: "bg-blue-800 hover:bg-blue-900 text-white" },
+      { icon: "Instagram", name: "Instagram", url: "#", color: "bg-pink-600 hover:bg-pink-700 text-white" },
+      { icon: "Clapperboard", name: "TikTok", url: "#", color: "bg-black hover:bg-gray-800 text-white" },
     ],
     cvLink: "#",
   },
   about: {
     title: "About Me",
-    subtitle: "My story and skills.",
-    bio_p1: "I am a passionate full-stack developer with a knack for creating elegant solutions in the least amount of time. I have experience with a wide range of technologies, including React, Node.js, and Python. I am always eager to learn new things and take on new challenges.",
-    bio_p2: "When I'm not coding, I enjoy spending time with my family, reading, and playing video games. I am also a big fan of open-source software and contribute to various projects in my spare time.",
-    skills: ["React", "TypeScript", "Node.js", "Python", "Supabase", "Tailwind CSS", "Figma"],
+    subtitle: "My journey in quality assurance.",
+    bio_p1: "I am a dedicated Software Quality Assurance Engineer with a passion for ensuring flawless user experiences. My meticulous approach to testing and keen eye for detail help bridge the gap between development and deployment, guaranteeing robust and reliable software.",
+    bio_p2: "I thrive on identifying potential issues before they impact users, and I'm proficient in creating comprehensive test plans, executing test cases, and automating repetitive tasks to improve efficiency. My goal is to uphold the highest standards of quality for every project I'm a part of.",
+    skills: ["Manual Testing", "Automation Testing", "Selenium", "Jira", "Test Planning", "API Testing", "SQL", "Agile Methodologies"],
     features: [
-      { icon: "Code", title: "Web Development", description: "Building responsive and dynamic websites." },
-      { icon: "Database", title: "Database Management", description: "Working with SQL and NoSQL databases." },
-      { icon: "PenTool", title: "UI/UX Design", description: "Designing user-friendly interfaces." },
+      { icon: "ClipboardCheck", title: "Test Planning", description: "Creating detailed and effective test strategies." },
+      { icon: "Bot", title: "Test Automation", description: "Developing scripts to automate testing processes." },
+      { icon: "Bug", title: "Defect Tracking", description: "Managing and tracking bugs from discovery to resolution." },
     ],
   },
   portfolio: {
