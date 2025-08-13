@@ -1,5 +1,5 @@
 import { useSupabase } from '@/context/SupabaseProvider';
-import { useContent, type Album, type Photo, type LoginErrorContent } from '@/context/ContentContext';
+import { useContent, type Album, type Photo, type LoginErrorContent, type Project } from '@/context/ContentContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,10 @@ import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Trash2, ImagePlus, Upload, Loader2 } from 'lucide-react';
+import { Trash2, ImagePlus, Upload, Loader2, PlusCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import ProjectForm from '@/components/ProjectForm';
+import { useQueryClient } from '@tanstack/react-query';
 
 type GetInTouchLink = {
   icon: string;
@@ -37,6 +40,7 @@ type AboutContent = {
 const AdminDashboard = () => {
   const { supabase } = useSupabase();
   const { content, updateContent } = useContent();
+  const queryClient = useQueryClient();
   
   const [heroState, setHeroState] = useState(content.hero);
   const [aboutState, setAboutState] = useState(content.about);
@@ -47,6 +51,9 @@ const AdminDashboard = () => {
   const [contactDescription, setContactDescription] = useState(content.contact.description);
   const [loginErrorState, setLoginErrorState] = useState(content.loginError);
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   useEffect(() => {
     setHeroState(content.hero);
@@ -57,6 +64,7 @@ const AdminDashboard = () => {
     setContactTitle(content.contact.title);
     setContactDescription(content.contact.description);
     setLoginErrorState(content.loginError);
+    setProjects(content.projects);
   }, [content]);
 
   const handleLogout = async () => {
@@ -70,6 +78,38 @@ const AdminDashboard = () => {
 
   const handleSave = (section: string, data: any) => {
     updateContent({ [section]: data });
+  };
+
+  const handleOpenProjectForm = (project: Project | null = null) => {
+    setSelectedProject(project);
+    setIsProjectFormOpen(true);
+  };
+
+  const handleCloseProjectForm = () => {
+    setIsProjectFormOpen(false);
+    setSelectedProject(null);
+  };
+
+  const handleSaveProject = (savedProject: Project) => {
+    if (selectedProject) {
+      setProjects(projects.map(p => p.id === savedProject.id ? savedProject : p));
+    } else {
+      setProjects([...projects, savedProject]);
+    }
+    queryClient.invalidateQueries({ queryKey: ['portfolioContent'] });
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (!window.confirm('Are you sure you want to delete this project?')) return;
+
+    const { error } = await supabase.from('projects').delete().eq('id', projectId);
+    if (error) {
+      showError(`Failed to delete project: ${error.message}`);
+    } else {
+      setProjects(projects.filter(p => p.id !== projectId));
+      showSuccess('Project deleted successfully!');
+      queryClient.invalidateQueries({ queryKey: ['portfolioContent'] });
+    }
   };
 
   const handleHeroChange = (field: string, value: string) => setHeroState(p => ({ ...p, [field]: value }));
@@ -246,10 +286,10 @@ const AdminDashboard = () => {
       
       <main>
         <Tabs defaultValue="hero" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
             <TabsTrigger value="hero">Hero</TabsTrigger>
             <TabsTrigger value="about">About</TabsTrigger>
-            <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+            <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="gallery">Gallery</TabsTrigger>
             <TabsTrigger value="contact">Contact</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -382,15 +422,34 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="portfolio">
+          <TabsContent value="projects">
             <Card>
-              <CardHeader><CardTitle>Portfolio Section</CardTitle></CardHeader>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Manage Projects</CardTitle>
+                    <CardDescription>Add, edit, or delete your portfolio projects.</CardDescription>
+                  </div>
+                  <Button onClick={() => handleOpenProjectForm()}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Project
+                  </Button>
+                </div>
+              </CardHeader>
               <CardContent>
-                <form onSubmit={(e: FormEvent) => { e.preventDefault(); handleSave('portfolio', { title: portfolioTitle, description: portfolioDescription }); }} className="space-y-4">
-                  <div><Label htmlFor="portfolioTitle">Title</Label><Input id="portfolioTitle" value={portfolioTitle} onChange={(e) => setPortfolioTitle(e.target.value)} /></div>
-                  <div><Label htmlFor="portfolioDescription">Description</Label><Textarea id="portfolioDescription" value={portfolioDescription} onChange={(e) => setPortfolioDescription(e.target.value)} /></div>
-                  <Button type="submit">Save Portfolio</Button>
-                </form>
+                <div className="space-y-4">
+                  {projects.map(project => (
+                    <Card key={project.id} className="flex items-center justify-between p-4">
+                      <div className="flex-1 pr-4">
+                        <h4 className="font-semibold">{project.title}</h4>
+                        <p className="text-sm text-muted-foreground truncate">{project.description}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleOpenProjectForm(project)}>Edit</Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteProject(project.id)}>Delete</Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -512,6 +571,14 @@ const AdminDashboard = () => {
 
         </Tabs>
       </main>
+      <Dialog open={isProjectFormOpen} onOpenChange={setIsProjectFormOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{selectedProject ? 'Edit Project' : 'Add New Project'}</DialogTitle>
+          </DialogHeader>
+          <ProjectForm project={selectedProject} onSave={handleSaveProject} onClose={handleCloseProjectForm} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

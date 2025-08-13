@@ -80,6 +80,17 @@ export type LoginErrorContent = {
   errorSoundUrl: string;
 };
 
+export type Project = {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  project_url: string;
+  github_url: string;
+  technologies: string[];
+  is_featured: boolean;
+};
+
 export type Content = {
   hero: HeroContent;
   about: AboutContent;
@@ -87,6 +98,7 @@ export type Content = {
   gallery: GalleryContent;
   contact: ContactContent;
   loginError: LoginErrorContent;
+  projects: Project[];
 };
 
 type ContentContextType = {
@@ -168,6 +180,7 @@ const initialContent: Content = {
     emoji: "😠",
     errorSoundUrl: "",
   },
+  projects: [],
 };
 
 const contentQueryKey = ['portfolioContent'];
@@ -179,31 +192,39 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   const { data: content, isLoading, isError } = useQuery<Content>({
     queryKey: contentQueryKey,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: contentData, error: contentError } = await supabase
         .from('portfolio_content')
         .select('content')
         .eq('id', 1)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found, which is fine on first load
-        console.error("Error fetching content:", error);
-        throw new Error(error.message);
+      if (contentError && contentError.code !== 'PGRST116') { // PGRST116 means no rows found
+        console.error("Error fetching content:", contentError);
+        throw new Error(contentError.message);
       }
-      
-      if (data?.content) {
-        return data.content as Content;
+
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('*')
+        .order('sort_order', { ascending: true });
+
+      if (projectsError) {
+        console.error("Error fetching projects:", projectsError);
+        throw new Error(projectsError.message);
       }
+
+      const baseContent = contentData?.content ? (contentData.content as Omit<Content, 'projects'>) : (initialContent as Omit<Content, 'projects'>);
       
-      // If no content in DB, return the default initial content.
-      // The first save action will create the record in the database.
-      return initialContent;
+      return {
+        ...baseContent,
+        projects: projectsData || [],
+      };
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   const { mutate } = useMutation({
     mutationFn: async (newContent: Partial<Content>) => {
-      // Ensure we have the full, most recent content object before merging
       const currentContent = queryClient.getQueryData<Content>(contentQueryKey) || initialContent;
       const updatedContent = { ...currentContent, ...newContent };
       
