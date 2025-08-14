@@ -63,11 +63,13 @@ const Hero = () => {
           </div>
 
           {/* Right Column: Image */}
-          <div className="hidden md:flex justify-center items-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
-            <Avatar className="w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 border-4 border-primary/10 shadow-2xl">
-              <AvatarImage src={hero.avatarUrl} alt={hero.name} className="object-cover" />
-              <AvatarFallback>{hero.name.substring(0, 2)}</AvatarFallback>
-            </Avatar>
+          <div className="hidden md:flex justify-center items-center animate-fade-in [perspective:1000px]" style={{ animationDelay: '0.5s' }}>
+            <div className="transition-transform duration-500 ease-in-out hover:[transform:rotateY(15deg)_rotateX(5deg)]">
+              <Avatar className="w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 border-4 border-primary/10 shadow-2xl">
+                <AvatarImage src={hero.avatarUrl} alt={hero.name} className="object-cover" />
+                <AvatarFallback>{hero.name.substring(0, 2)}</AvatarFallback>
+              </Avatar>
+            </div>
           </div>
         </div>
 

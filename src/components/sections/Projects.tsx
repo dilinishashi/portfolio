@@ -18,7 +18,7 @@ const Projects = () => {
         </div>
         <div className="grid md:grid-cols-2 gap-8">
           {projects.map((project, index) => (
-            <div key={project.id} className="animate-fade-in" style={{ animationDelay: `${index * 150}ms` }}>
+            <div key={project.id} className="animate-roll-in" style={{ animationDelay: `${index * 150}ms`, opacity: 0 }}>
               <ProjectCard project={project} />
             </div>
           ))}

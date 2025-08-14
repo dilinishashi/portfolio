@@ -28,8 +28,8 @@ const Gallery = () => {
               {albums.map((album, index) => (
                 <div
                   key={album.id}
-                  className="animate-fade-in cursor-pointer group flex-shrink-0 w-[300px] md:w-[350px]"
-                  style={{ animationDelay: `${index * 150}ms` }}
+                  className="animate-roll-in cursor-pointer group flex-shrink-0 w-[300px] md:w-[350px]"
+                  style={{ animationDelay: `${index * 150}ms`, opacity: 0 }}
                   onClick={() => setSelectedAlbum(album)}
                 >
                   <Card className="h-full overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1">
