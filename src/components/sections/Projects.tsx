@@ -1,5 +1,6 @@
 import { useContent } from "@/context/ContentContext";
 import ProjectCard from "@/components/ProjectCard";
+import AnimatedCard from "@/components/AnimatedCard";
 
 const Projects = () => {
   const { content } = useContent();
@@ -18,9 +19,9 @@ const Projects = () => {
         </div>
         <div className="grid md:grid-cols-2 gap-8">
           {projects.map((project, index) => (
-            <div key={project.id} className="animate-roll-in" style={{ animationDelay: `${index * 150}ms`, opacity: 0 }}>
+            <AnimatedCard key={project.id} delay={index * 150}>
               <ProjectCard project={project} />
-            </div>
+            </AnimatedCard>
           ))}
         </div>
       </div>

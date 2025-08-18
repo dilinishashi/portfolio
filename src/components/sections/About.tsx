@@ -2,6 +2,7 @@ import { useContent } from "@/context/ContentContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import SocialIcon from "@/components/SocialIcon";
+import AnimatedCard from "@/components/AnimatedCard";
 
 const About = () => {
   const { content } = useContent();
@@ -34,7 +35,7 @@ const About = () => {
           {/* Right Column */}
           <div className="md:col-span-2 grid sm:grid-cols-2 gap-6">
             {about.features.map((feature, index) => (
-              <div key={feature.title} className="animate-roll-in" style={{ animationDelay: `${400 + index * 150}ms`, opacity: 0 }}>
+              <AnimatedCard key={feature.title} delay={400 + index * 150}>
                 <Card className="bg-muted/50 p-2 h-full">
                   <CardHeader>
                     <SocialIcon name={feature.icon as any} className="w-7 h-7 text-primary mb-2" />
@@ -44,7 +45,7 @@ const About = () => {
                     <p className="text-sm text-muted-foreground">{feature.description}</p>
                   </CardContent>
                 </Card>
-              </div>
+              </AnimatedCard>
             ))}
           </div>
         </div>

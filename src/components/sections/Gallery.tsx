@@ -4,6 +4,7 @@ import { type Album } from "@/context/ContentContext";
 import AlbumViewer from "@/components/AlbumViewer";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Image as ImageIcon } from "lucide-react";
+import AnimatedCard from "@/components/AnimatedCard";
 
 const Gallery = () => {
   const { content } = useContent();
@@ -26,10 +27,10 @@ const Gallery = () => {
           {albums && albums.length > 0 ? (
             <div className="flex space-x-8 overflow-x-auto pb-4">
               {albums.map((album, index) => (
-                <div
+                <AnimatedCard
                   key={album.id}
-                  className="animate-roll-in cursor-pointer group flex-shrink-0 w-[300px] md:w-[350px]"
-                  style={{ animationDelay: `${index * 150}ms`, opacity: 0 }}
+                  className="cursor-pointer group flex-shrink-0 w-[300px] md:w-[350px]"
+                  delay={index * 150}
                   onClick={() => setSelectedAlbum(album)}
                 >
                   <Card className="h-full overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1">
@@ -53,7 +54,7 @@ const Gallery = () => {
                       </p>
                     </CardContent>
                   </Card>
-                </div>
+                </AnimatedCard>
               ))}
             </div>
           ) : (
