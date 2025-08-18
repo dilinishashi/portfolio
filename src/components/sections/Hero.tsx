@@ -15,7 +15,7 @@ const Hero = () => {
 
   return (
     <>
-      <section id="hero" className="relative h-screen flex flex-col items-center justify-center overflow-hidden p-4">
+      <section id="hero" className="relative flex flex-col items-center justify-center p-4 pt-14 md:pt-16 scroll-mt-16 min-h-[calc(100svh-56px)] md:min-h-[calc(100dvh-56px)]">
         <div className="absolute inset-0 bg-background/80 z-10" />
         <div className="absolute inset-0 animate-pulse-slow">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10" />
@@ -23,7 +23,7 @@ const Hero = () => {
         
         <div className="relative z-20 container grid md:grid-cols-2 gap-8 md:gap-12 items-center">
           {/* Left Column: Text Content */}
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
+          <div className="flex flex-col items-center md:items-start text-center md:text-left order-2 md:order-1">
             <p className="text-lg md:text-xl text-muted-foreground mb-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
               {hero.greeting}
             </p>
@@ -63,7 +63,7 @@ const Hero = () => {
           </div>
 
           {/* Right Column: Image */}
-          <div className="hidden md:flex justify-center items-center animate-fade-in [perspective:1000px]" style={{ animationDelay: '0.5s' }}>
+          <div className="flex justify-center items-center order-1 md:order-2 animate-fade-in [perspective:1000px]" style={{ animationDelay: '0.5s' }}>
             <div className="transition-transform duration-500 ease-in-out hover:[transform:rotateY(15deg)_rotateX(5deg)]">
               <Avatar className="w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 border-4 border-primary/10 shadow-2xl">
                 <AvatarImage src={hero.avatarUrl} alt={hero.name} className="object-cover" />
