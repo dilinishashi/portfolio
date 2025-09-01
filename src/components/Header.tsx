@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
@@ -5,12 +6,25 @@ import { useSupabase } from "@/context/SupabaseProvider";
 
 const Header = () => {
   const { session } = useSupabase();
+  const [clickCount, setClickCount] = useState(0);
+  const [showAdminButton, setShowAdminButton] = useState(false);
+
   const navLinks = [
     { name: "Home", href: "#hero" },
     { name: "About", href: "#about" },
     { name: "Gallery", href: "#gallery" },
     { name: "Contact", href: "#contact" },
   ];
+
+  const handleHiddenClick = () => {
+    const newCount = clickCount + 1;
+    if (newCount === 3) {
+      setShowAdminButton(true);
+      setClickCount(0); // reset after success
+    } else {
+      setClickCount(newCount);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -37,9 +51,20 @@ const Header = () => {
               <Button variant="ghost">Dashboard</Button>
             </Link>
           ) : (
-            <Link to="/admin">
-              <Button variant="ghost">Admin Sign In</Button>
-            </Link>
+            <>
+              {!showAdminButton ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleHiddenClick}
+                >
+                </Button>
+              ) : (
+                <Link to="/admin">
+                  <Button variant="ghost">Admin Sign In</Button>
+                </Link>
+              )}
+            </>
           )}
           <ThemeToggle />
         </div>
