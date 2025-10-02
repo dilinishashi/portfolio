@@ -14,6 +14,10 @@ import { Trash2, ImagePlus, Upload, Loader2, PlusCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ProjectForm from '@/components/ProjectForm';
 import { useQueryClient } from '@tanstack/react-query';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure the PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 type GetInTouchLink = {
   icon: string;
@@ -51,6 +55,7 @@ const AdminDashboard = () => {
   const [contactDescription, setContactDescription] = useState(content.contact.description);
   const [loginErrorState, setLoginErrorState] = useState(content.loginError);
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const [isCvProcessing, setIsCvProcessing] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -123,21 +128,54 @@ const AdminDashboard = () => {
     newLinks[index] = { ...newLinks[index], [field]: value };
     setHeroState(p => ({ ...p, getInTouchLinks: newLinks }));
   };
+  
   const handleCvUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.type !== 'application/pdf') {
-        showError('Please upload a PDF file.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        handleHeroChange('cvLink', reader.result as string);
-        showSuccess("CV uploaded. Click 'Save Hero' to apply changes.");
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      showError('Please upload a PDF file.');
+      return;
     }
+
+    setIsCvProcessing(true);
+
+    // Read as Data URL for viewing/downloading link
+    const dataUrlReader = new FileReader();
+    dataUrlReader.readAsDataURL(file);
+    dataUrlReader.onload = () => {
+      handleHeroChange('cvLink', dataUrlReader.result as string);
+    };
+
+    // Read as ArrayBuffer for text extraction
+    const arrayBufferReader = new FileReader();
+    arrayBufferReader.readAsArrayBuffer(file);
+    arrayBufferReader.onload = async (event) => {
+      try {
+        const pdfData = new Uint8Array(event.target?.result as ArrayBuffer);
+        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map(item => ('str' in item ? item.str : '')).join(' ');
+        }
+        handleHeroChange('cvText', text);
+        showSuccess("CV PDF processed. Text extracted for AI analysis. Remember to save your changes.");
+      } catch (error) {
+        console.error("Failed to process PDF:", error);
+        showError("Failed to extract text from the PDF. You may need to paste it manually.");
+      } finally {
+        setIsCvProcessing(false);
+      }
+    };
+    
+    arrayBufferReader.onerror = () => {
+      showError("Failed to read the PDF file.");
+      setIsCvProcessing(false);
+    };
   };
+
   const handleAvatarUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -312,8 +350,11 @@ const AdminDashboard = () => {
                       
                       <div>
                         <Label htmlFor="cvUpload">Upload CV (PDF only)</Label>
-                        <Input id="cvUpload" type="file" accept="application/pdf" onChange={handleCvUpload} className="mt-1" />
-                        {heroState.cvLink && heroState.cvLink !== '#' && <p className="text-sm text-muted-foreground mt-2">A CV is currently uploaded. Uploading a new one will replace it.</p>}
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input id="cvUpload" type="file" accept="application/pdf" onChange={handleCvUpload} className="flex-1" disabled={isCvProcessing} />
+                          {isCvProcessing && <Loader2 className="h-5 w-5 animate-spin" />}
+                        </div>
+                        {heroState.cvLink && heroState.cvLink !== '#' && <p className="text-sm text-muted-foreground mt-2">A CV is currently uploaded. Uploading a new one will replace it and re-extract the text for AI analysis.</p>}
                       </div>
                       <div>
                         <Label htmlFor="avatarUpload">Upload Profile Picture (Image)</Label>
@@ -322,7 +363,7 @@ const AdminDashboard = () => {
                       </div>
                       <div>
                         <Label htmlFor="cvText">CV Text for AI Analysis</Label>
-                        <Textarea id="cvText" value={heroState.cvText || ''} onChange={(e) => handleHeroChange('cvText', e.target.value)} rows={10} placeholder="Paste the full text of your CV here..." />
+                        <Textarea id="cvText" value={heroState.cvText || ''} onChange={(e) => handleHeroChange('cvText', e.target.value)} rows={10} placeholder="Paste the full text of your CV here, or upload a PDF to auto-fill this field." />
                         <p className="text-sm text-muted-foreground mt-2">This text will be used by the AI Job Matcher. It will not be visible on the public site.</p>
                       </div>
                     </div>
