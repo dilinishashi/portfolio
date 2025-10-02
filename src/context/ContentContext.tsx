@@ -206,7 +206,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
-        .order('sort_order', { ascending: true });
+        .order('display_order', { ascending: true });
 
       if (projectsError) {
         console.error("Error fetching projects:", projectsError);
