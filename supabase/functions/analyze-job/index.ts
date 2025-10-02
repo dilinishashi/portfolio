@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,20 +17,43 @@ serve(async (req) => {
       throw new Error("OPENAI_API_KEY is not set in Supabase secrets.");
     }
 
-    const { jobDescriptionText, jobDescriptionImage, cvText } = await req.json();
+    const { jobDescriptionText, jobDescriptionImage, jobDescriptionUrl, cvText } = await req.json();
     if (!cvText) {
       return new Response(JSON.stringify({ error: "Missing CV text." }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    if (!jobDescriptionText && !jobDescriptionImage) {
-      return new Response(JSON.stringify({ error: "Missing job description text or image." }), {
+    if (!jobDescriptionText && !jobDescriptionImage && !jobDescriptionUrl) {
+      return new Response(JSON.stringify({ error: "Missing job description text, image, or URL." }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     let model: string;
     let messages: any[];
+    let finalJobDescription = jobDescriptionText;
+
+    if (jobDescriptionUrl) {
+      try {
+        const response = await fetch(jobDescriptionUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch URL: ${response.statusText}`);
+        }
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        if (!doc) throw new Error("Failed to parse HTML from URL.");
+
+        // Try to find the main content, otherwise fall back to the whole body
+        const mainContent = doc.querySelector("main") || doc.querySelector("article") || doc.body;
+        finalJobDescription = mainContent?.textContent?.replace(/\s\s+/g, ' ').trim() || '';
+        
+        if (!finalJobDescription) {
+          throw new Error("Could not extract any text content from the URL.");
+        }
+      } catch (e) {
+        throw new Error(`Failed to process URL. It might be a complex site or require a login. Error: ${e.message}`);
+      }
+    }
 
     const analysisPrompt = `
       You are an expert career coach and resume analyst.
@@ -55,9 +79,9 @@ serve(async (req) => {
       }
     `;
 
-    if (jobDescriptionText) {
+    if (finalJobDescription) {
       model = "gpt-3.5-turbo";
-      const prompt = analysisPrompt.replace('{JOB_DESCRIPTION_PLACEHOLDER}', jobDescriptionText);
+      const prompt = analysisPrompt.replace('{JOB_DESCRIPTION_PLACEHOLDER}', finalJobDescription);
       messages = [{ role: "user", content: prompt }];
     } else { // jobDescriptionImage
       model = "gpt-4o"; // Use the vision-capable model

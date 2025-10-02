@@ -26,6 +26,7 @@ const JobAnalyzer = () => {
   const { content } = useContent();
   const [inputType, setInputType] = useState('text');
   const [jobDescription, setJobDescription] = useState('');
+  const [jobUrl, setJobUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Analyzing...');
@@ -81,6 +82,14 @@ const JobAnalyzer = () => {
         jobDescriptionText: jobDescription,
         cvText: content.hero.cvText,
       });
+    } else if (inputType === 'url') {
+        if (!jobUrl.trim()) {
+            showError("Please enter a URL.");
+            setIsLoading(false);
+            return;
+        }
+        setLoadingMessage('Fetching from URL...');
+        await invokeSupabase({ jobDescriptionUrl: jobUrl, cvText: content.hero.cvText });
     } else { // File input
       if (!file) {
         showError("Please select a file to upload.");
@@ -130,14 +139,15 @@ const JobAnalyzer = () => {
           AI Job Matcher
         </CardTitle>
         <CardDescription>
-          Paste text or upload a file (PDF/Image) to see how well your CV matches a job.
+          Paste text, upload a file, or provide a URL to see how well your CV matches a job.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <Tabs value={inputType} onValueChange={setInputType} defaultValue="text">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="text">Paste Text</TabsTrigger>
             <TabsTrigger value="file">Upload File</TabsTrigger>
+            <TabsTrigger value="url">From URL</TabsTrigger>
           </TabsList>
           <TabsContent value="text" className="pt-4">
             <div className="space-y-2">
@@ -163,6 +173,19 @@ const JobAnalyzer = () => {
                 disabled={isLoading}
               />
               {file && <p className="text-sm text-muted-foreground">Selected: {file.name}</p>}
+            </div>
+          </TabsContent>
+          <TabsContent value="url" className="pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="job-url">Job Posting URL</Label>
+              <Input
+                id="job-url"
+                type="url"
+                placeholder="https://example.com/job-posting"
+                value={jobUrl}
+                onChange={(e) => setJobUrl(e.target.value)}
+                disabled={isLoading}
+              />
             </div>
           </TabsContent>
         </Tabs>
