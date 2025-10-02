@@ -12,8 +12,28 @@ import { showError } from '@/utils/toast';
 interface AnalysisResult {
   matchPercentage: number;
   summary: string;
-  matchingSkills: string[];
+  matchingKeywords: string[];
 }
+
+// A list of common English "stop words" to filter out from the analysis
+const stopWords = new Set([
+  'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 
+  'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 
+  'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 
+  'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 
+  'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 
+  'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 
+  'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 
+  'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 
+  'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 
+  'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 
+  'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 
+  'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now', 'd', 
+  'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', 'couldn', 'didn', 'doesn', 'hadn', 
+  'hasn', 'haven', 'isn', 'ma', 'mightn', 'mustn', 'needn', 'shan', 'shouldn', 'wasn', 
+  'weren', 'won', 'wouldn', 'experience', 'work', 'job', 'role', 'responsibilities', 
+  'requirements', 'skills', 'company', 'team', 'etc', 'eg', 'years'
+]);
 
 const JobAnalyzer = () => {
   const { content } = useContent();
@@ -22,16 +42,21 @@ const JobAnalyzer = () => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // A simple function to clean up text for better matching
-  const normalizeText = (text: string) => {
-    return text.toLowerCase().replace(/[^\w\s]/gi, '');
+  const getTextTokens = (text: string): Set<string> => {
+    if (!text) return new Set();
+    const words = text
+      .toLowerCase()
+      .replace(/[^\w\s]/gi, ' ') // remove punctuation
+      .split(/\s+/) // split by whitespace
+      .filter(word => word.length > 2 && !stopWords.has(word)); // filter out stop words and short words
+    return new Set(words);
   };
 
   const handleAnalyze = () => {
-    const skillsToMatch = content.about.skills;
+    const { cvText } = content.hero;
 
-    if (!skillsToMatch || skillsToMatch.length === 0) {
-      showError("No skills found in your 'About Me' section. Please add some in the Admin Dashboard.");
+    if (!cvText || cvText.trim().length < 50) {
+      showError("Your CV text is missing or too short. Please add it in the Admin Dashboard > Hero section.");
       return;
     }
     if (!jobDescription.trim()) {
@@ -43,36 +68,37 @@ const JobAnalyzer = () => {
     setError(null);
     setAnalysisResult(null);
 
-    // Simulate a short delay for a better user experience
     setTimeout(() => {
       try {
-        const normalizedJobDesc = normalizeText(jobDescription);
-        const matchingSkills: string[] = [];
+        const cvTokens = getTextTokens(cvText);
+        const jobTokens = getTextTokens(jobDescription);
 
-        skillsToMatch.forEach(skill => {
-          const normalizedSkill = normalizeText(skill);
-          if (normalizedJobDesc.includes(normalizedSkill)) {
-            matchingSkills.push(skill);
-          }
-        });
+        if (jobTokens.size === 0) {
+          throw new Error("Could not extract any meaningful keywords from the job description.");
+        }
 
-        const matchPercentage = Math.round((matchingSkills.length / skillsToMatch.length) * 100);
+        const intersection = new Set([...cvTokens].filter(token => jobTokens.has(token)));
+        const union = new Set([...cvTokens, ...jobTokens]);
 
-        const summary = `The analysis found that ${matchingSkills.length} out of your ${skillsToMatch.length} listed skills match the job description. This results in a ${matchPercentage}% keyword match.`;
+        // Jaccard Index for similarity percentage
+        const matchPercentage = Math.round((intersection.size / union.size) * 100);
+        const matchingKeywords = Array.from(intersection).sort();
+
+        const summary = `Based on a keyword analysis of your CV and the job description, there is a ${matchPercentage}% content match. The analysis found ${intersection.size} common keywords out of a total of ${union.size} unique terms.`;
 
         setAnalysisResult({
           matchPercentage,
           summary,
-          matchingSkills,
+          matchingKeywords,
         });
 
       } catch (e: any) {
-        setError("An unexpected error occurred during the analysis.");
+        setError(e.message || "An unexpected error occurred during the analysis.");
         console.error(e);
       } finally {
         setIsLoading(false);
       }
-    }, 500); // 0.5 second delay
+    }, 500);
   };
 
   return (
@@ -83,7 +109,7 @@ const JobAnalyzer = () => {
           Job Skill Matcher
         </CardTitle>
         <CardDescription>
-          Paste a job description below to see how your skills match up.
+          Paste a job description below to see how your CV content matches the requirements.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -127,7 +153,7 @@ const JobAnalyzer = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Match Percentage</Label>
+                <Label>Content Match Score</Label>
                 <div className="flex items-center gap-4 mt-1">
                   <Progress value={analysisResult.matchPercentage} className="w-full" />
                   <span className="font-bold text-lg text-primary">{analysisResult.matchPercentage}%</span>
@@ -138,14 +164,14 @@ const JobAnalyzer = () => {
                 <p className="text-sm text-muted-foreground mt-1">{analysisResult.summary}</p>
               </div>
               <div>
-                <Label>Matching Skills</Label>
+                <Label>Matching Keywords</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {analysisResult.matchingSkills.length > 0 ? (
-                    analysisResult.matchingSkills.map((skill) => (
-                      <Badge key={skill} variant="secondary">{skill}</Badge>
+                  {analysisResult.matchingKeywords.length > 0 ? (
+                    analysisResult.matchingKeywords.map((keyword) => (
+                      <Badge key={keyword} variant="secondary">{keyword}</Badge>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">No direct skill matches found.</p>
+                    <p className="text-sm text-muted-foreground">No significant keyword matches found.</p>
                   )}
                 </div>
               </div>
