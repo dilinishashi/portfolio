@@ -100,7 +100,7 @@ serve(async (req) => {
       },
     };
 
-    const model = imagePart ? 'gemini-1.5-flash' : 'gemini-1.5-flash';
+    const model = imagePart ? 'gemini-pro-vision' : 'gemini-pro';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${googleApiKey}`;
 
     console.log(`Making request to Google Gemini with model: ${model}`);
