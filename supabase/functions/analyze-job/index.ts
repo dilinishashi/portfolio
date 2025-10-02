@@ -12,13 +12,13 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Function invoked. Checking for OpenAI API key...");
-    const openAiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openAiKey) {
-      console.error("! IMPORTANT: OPENAI_API_KEY secret not found!");
-      throw new Error("The OPENAI_API_KEY secret is not set in the Supabase project. Please add it in the Edge Function settings.");
+    console.log("Function invoked. Checking for Google API key...");
+    const googleApiKey = Deno.env.get("GOOGLE_API_KEY");
+    if (!googleApiKey) {
+      console.error("! IMPORTANT: GOOGLE_API_KEY secret not found!");
+      throw new Error("The GOOGLE_API_KEY secret is not set in the Supabase project. Please add it in the Edge Function settings.");
     }
-    console.log("OpenAI API key found successfully.");
+    console.log("Google API key found successfully.");
 
     const { jobDescriptionText, jobDescriptionImage, jobDescriptionUrl, cvText } = await req.json();
     if (!cvText) {
@@ -32,31 +32,35 @@ serve(async (req) => {
       });
     }
 
-    let model: string;
-    let messages: any[];
     let finalJobDescription = jobDescriptionText;
+    let imagePart = null;
 
     if (jobDescriptionUrl) {
       console.log(`Processing URL: ${jobDescriptionUrl}`);
       try {
         const response = await fetch(jobDescriptionUrl);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch URL: ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`);
         const html = await response.text();
         const doc = new DOMParser().parseFromString(html, "text/html");
         if (!doc) throw new Error("Failed to parse HTML from URL.");
-
         const mainContent = doc.querySelector("main") || doc.querySelector("article") || doc.body;
         finalJobDescription = mainContent?.textContent?.replace(/\s\s+/g, ' ').trim() || '';
-        
-        if (!finalJobDescription) {
-          throw new Error("Could not extract any text content from the URL.");
-        }
+        if (!finalJobDescription) throw new Error("Could not extract any text content from the URL.");
         console.log("Successfully extracted content from URL.");
       } catch (e) {
         throw new Error(`Failed to process URL. It might be a complex site or require a login. Error: ${e.message}`);
       }
+    }
+
+    if (jobDescriptionImage) {
+      const [header, base64Data] = jobDescriptionImage.split(',');
+      const mimeType = header.match(/:(.*?);/)[1];
+      imagePart = {
+        inline_data: {
+          mime_type: mimeType,
+          data: base64Data,
+        },
+      };
     }
 
     const analysisPrompt = `
@@ -67,7 +71,7 @@ serve(async (req) => {
       ---
       **Job Description:**
       ---
-      {JOB_DESCRIPTION_PLACEHOLDER}
+      ${finalJobDescription || '(The job description is in the provided image. Please extract the text from the image first and then perform the analysis.)'}
       ---
       **Instructions:**
       1.  Carefully read both the CV and the Job Description.
@@ -83,53 +87,40 @@ serve(async (req) => {
       }
     `;
 
-    if (finalJobDescription) {
-      model = "gpt-3.5-turbo";
-      const prompt = analysisPrompt.replace('{JOB_DESCRIPTION_PLACEHOLDER}', finalJobDescription);
-      messages = [{ role: "user", content: prompt }];
-    } else { // jobDescriptionImage
-      model = "gpt-4o";
-      const promptForImage = analysisPrompt.replace('{JOB_DESCRIPTION_PLACEHOLDER}', '(The job description is in the provided image. Please extract the text from the image first and then perform the analysis.)');
-      messages = [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: promptForImage },
-            {
-              type: "image_url",
-              image_url: { url: jobDescriptionImage },
-            },
-          ],
-        },
-      ];
+    const parts = [{ text: analysisPrompt }];
+    if (imagePart) {
+      parts.push(imagePart);
     }
 
-    console.log(`Making request to OpenAI with model: ${model}`);
-    const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: messages,
-        response_format: { type: "json_object" },
+    const geminiPayload = {
+      contents: [{ parts }],
+      generationConfig: {
+        response_mime_type: "application/json",
         temperature: 0.3,
-        max_tokens: 1000,
-      }),
+      },
+    };
+
+    const model = imagePart ? 'gemini-1.5-flash' : 'gemini-1.5-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${googleApiKey}`;
+
+    console.log(`Making request to Google Gemini with model: ${model}`);
+    const geminiResponse = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(geminiPayload),
     });
 
-    console.log(`OpenAI response status: ${openAiResponse.status}`);
-    if (!openAiResponse.ok) {
-      const errorBody = await openAiResponse.text();
-      console.error("OpenAI API Error:", errorBody);
-      throw new Error(`OpenAI API error (${openAiResponse.status}): ${errorBody}`);
+    console.log(`Gemini response status: ${geminiResponse.status}`);
+    if (!geminiResponse.ok) {
+      const errorBody = await geminiResponse.text();
+      console.error("Google Gemini API Error:", errorBody);
+      throw new Error(`Google Gemini API error (${geminiResponse.status}): ${errorBody}`);
     }
-    console.log("Successfully received response from OpenAI.");
+    console.log("Successfully received response from Gemini.");
 
-    const data = await openAiResponse.json();
-    const analysis = JSON.parse(data.choices[0].message.content);
+    const data = await geminiResponse.json();
+    const analysisText = data.candidates[0].content.parts[0].text;
+    const analysis = JSON.parse(analysisText);
 
     return new Response(JSON.stringify(analysis), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
