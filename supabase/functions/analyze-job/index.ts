@@ -1,36 +1,37 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-// CORS headers to allow requests from your website
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Main function to handle requests
 serve(async (req) => {
-  // Handle preflight CORS requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get the OpenAI API key from Supabase secrets
     const openAiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openAiKey) {
       throw new Error("OPENAI_API_KEY is not set in Supabase secrets.");
     }
 
-    // Get the job description and CV text from the request body
-    const { jobDescriptionText, cvText } = await req.json();
-    if (!jobDescriptionText || !cvText) {
-      return new Response(JSON.stringify({ error: "Missing job description or CV text." }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const { jobDescriptionText, jobDescriptionImage, cvText } = await req.json();
+    if (!cvText) {
+      return new Response(JSON.stringify({ error: "Missing CV text." }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (!jobDescriptionText && !jobDescriptionImage) {
+      return new Response(JSON.stringify({ error: "Missing job description text or image." }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // The prompt for the AI model
-    const prompt = `
+    let model: string;
+    let messages: any[];
+
+    const analysisPrompt = `
       You are an expert career coach and resume analyst.
       Analyze the following CV text and job description.
       Provide a percentage match score, a brief summary explaining why the candidate is a good fit,
@@ -43,7 +44,7 @@ serve(async (req) => {
 
       Job Description:
       ---
-      ${jobDescriptionText}
+      {JOB_DESCRIPTION_PLACEHOLDER}
       ---
 
       Your response MUST be a valid JSON object with the following structure:
@@ -54,7 +55,27 @@ serve(async (req) => {
       }
     `;
 
-    // Call the OpenAI API
+    if (jobDescriptionText) {
+      model = "gpt-3.5-turbo";
+      const prompt = analysisPrompt.replace('{JOB_DESCRIPTION_PLACEHOLDER}', jobDescriptionText);
+      messages = [{ role: "user", content: prompt }];
+    } else { // jobDescriptionImage
+      model = "gpt-4o"; // Use the vision-capable model
+      const promptForImage = analysisPrompt.replace('{JOB_DESCRIPTION_PLACEHOLDER}', '(The job description is in the provided image. Please extract the text from the image first and then perform the analysis.)');
+      messages = [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: promptForImage },
+            {
+              type: "image_url",
+              image_url: { url: jobDescriptionImage },
+            },
+          ],
+        },
+      ];
+    }
+
     const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: 'POST',
       headers: {
@@ -62,10 +83,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" }, // Ensure the response is JSON
+        model: model,
+        messages: messages,
+        response_format: { type: "json_object" },
         temperature: 0.3,
+        max_tokens: 1000,
       }),
     });
 
@@ -77,7 +99,6 @@ serve(async (req) => {
     const data = await openAiResponse.json();
     const analysis = JSON.parse(data.choices[0].message.content);
 
-    // Return the analysis to the client
     return new Response(JSON.stringify(analysis), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
