@@ -320,6 +320,11 @@ const AdminDashboard = () => {
                         <Input id="avatarUpload" type="file" accept="image/*" onChange={handleAvatarUpload} className="mt-1" />
                         {heroState.avatarUrl && <p className="text-sm text-muted-foreground mt-2">An avatar is currently set. Uploading a new one will replace it.</p>}
                       </div>
+                      <div>
+                        <Label htmlFor="cvText">CV Text for AI Analysis</Label>
+                        <Textarea id="cvText" value={heroState.cvText || ''} onChange={(e) => handleHeroChange('cvText', e.target.value)} rows={10} placeholder="Paste the full text of your CV here..." />
+                        <p className="text-sm text-muted-foreground mt-2">This text will be used by the AI Job Matcher. It will not be visible on the public site.</p>
+                      </div>
                     </div>
                     <Separator />
                     <div>

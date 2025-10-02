@@ -27,6 +27,7 @@ export type HeroContent = {
   getInTouchLinks: GetInTouchLink[];
   cvLink: string;
   avatarUrl: string;
+  cvText: string; // New field for AI analysis
 };
 
 export type Feature = {
@@ -129,6 +130,7 @@ const initialContent: Content = {
     ],
     cvLink: "#",
     avatarUrl: "https://via.placeholder.com/400x400?text=Your+Photo",
+    cvText: "", // New field
   },
   about: {
     title: "About Me",
@@ -216,6 +218,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       const baseContent = contentData?.content ? (contentData.content as Omit<Content, 'projects'>) : (initialContent as Omit<Content, 'projects'>);
       
       return {
+        ...initialContent, // Use initial content as a base to ensure all fields exist
         ...baseContent,
         projects: projectsData || [],
       };
