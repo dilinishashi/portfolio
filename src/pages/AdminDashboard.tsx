@@ -57,6 +57,7 @@ const AdminDashboard = () => {
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
   const [isCvProcessing, setIsCvProcessing] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [cvArrayBuffer, setCvArrayBuffer] = useState<ArrayBuffer | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -134,39 +135,52 @@ const AdminDashboard = () => {
     const file = e.target.files?.[0];
     if (!file) {
       setCvFile(null);
+      setCvArrayBuffer(null);
       return;
     }
 
     if (file.type !== 'application/pdf') {
       showError('Please upload a PDF file.');
       setCvFile(null);
+      setCvArrayBuffer(null);
       e.target.value = ''; // Reset input
       return;
     }
 
     setCvFile(file);
 
+    // Read as Data URL for the public link
     const dataUrlReader = new FileReader();
     dataUrlReader.readAsDataURL(file);
     dataUrlReader.onload = () => {
       handleHeroChange('cvLink', dataUrlReader.result as string);
-      showSuccess("CV file selected. Click 'Generate from CV' to extract text.");
     };
     dataUrlReader.onerror = () => {
       showError("Failed to read the PDF file for preview.");
     };
+
+    // Read as ArrayBuffer for text extraction and store it in state
+    const arrayBufferReader = new FileReader();
+    arrayBufferReader.readAsArrayBuffer(file);
+    arrayBufferReader.onload = () => {
+        setCvArrayBuffer(arrayBufferReader.result as ArrayBuffer);
+        showSuccess("CV file processed. Click 'Generate from CV' to extract text.");
+    };
+    arrayBufferReader.onerror = () => {
+        showError("Failed to process the PDF file.");
+        setCvArrayBuffer(null);
+    };
   };
 
   const handleGenerateCvText = async () => {
-    if (!cvFile) {
-      showError("Please upload a CV PDF first.");
+    if (!cvArrayBuffer) {
+      showError("Please upload a CV PDF first. If you have, it might have failed to process.");
       return;
     }
 
     setIsCvProcessing(true);
     try {
-      const arrayBuffer = await cvFile.arrayBuffer();
-      const pdfData = new Uint8Array(arrayBuffer);
+      const pdfData = new Uint8Array(cvArrayBuffer);
       const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
       let text = '';
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -178,7 +192,7 @@ const AdminDashboard = () => {
       showSuccess("Text extracted from CV successfully!");
     } catch (error) {
       console.error("Failed to process PDF:", error);
-      showError("Failed to extract text from the PDF.");
+      showError("Failed to extract text from the PDF. Check the browser console for more details.");
     } finally {
       setIsCvProcessing(false);
     }
