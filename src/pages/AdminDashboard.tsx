@@ -56,6 +56,7 @@ const AdminDashboard = () => {
   const [loginErrorState, setLoginErrorState] = useState(content.loginError);
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
   const [isCvProcessing, setIsCvProcessing] = useState(false);
+  const [cvFile, setCvFile] = useState<File | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -131,49 +132,56 @@ const AdminDashboard = () => {
   
   const handleCvUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      showError('Please upload a PDF file.');
+    if (!file) {
+      setCvFile(null);
       return;
     }
 
-    setIsCvProcessing(true);
+    if (file.type !== 'application/pdf') {
+      showError('Please upload a PDF file.');
+      setCvFile(null);
+      e.target.value = ''; // Reset input
+      return;
+    }
 
-    // Read as Data URL for viewing/downloading link
+    setCvFile(file);
+
     const dataUrlReader = new FileReader();
     dataUrlReader.readAsDataURL(file);
     dataUrlReader.onload = () => {
       handleHeroChange('cvLink', dataUrlReader.result as string);
+      showSuccess("CV file selected. Click 'Generate from CV' to extract text.");
     };
+    dataUrlReader.onerror = () => {
+      showError("Failed to read the PDF file for preview.");
+    };
+  };
 
-    // Read as ArrayBuffer for text extraction
-    const arrayBufferReader = new FileReader();
-    arrayBufferReader.readAsArrayBuffer(file);
-    arrayBufferReader.onload = async (event) => {
-      try {
-        const pdfData = new Uint8Array(event.target?.result as ArrayBuffer);
-        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        let text = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += content.items.map(item => ('str' in item ? item.str : '')).join(' ');
-        }
-        handleHeroChange('cvText', text);
-        showSuccess("CV PDF processed. Text extracted for AI analysis. Remember to save your changes.");
-      } catch (error) {
-        console.error("Failed to process PDF:", error);
-        showError("Failed to extract text from the PDF. You may need to paste it manually.");
-      } finally {
-        setIsCvProcessing(false);
+  const handleGenerateCvText = async () => {
+    if (!cvFile) {
+      showError("Please upload a CV PDF first.");
+      return;
+    }
+
+    setIsCvProcessing(true);
+    try {
+      const arrayBuffer = await cvFile.arrayBuffer();
+      const pdfData = new Uint8Array(arrayBuffer);
+      const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => ('str' in item ? item.str : '')).join(' ');
       }
-    };
-    
-    arrayBufferReader.onerror = () => {
-      showError("Failed to read the PDF file.");
+      handleHeroChange('cvText', text);
+      showSuccess("Text extracted from CV successfully!");
+    } catch (error) {
+      console.error("Failed to process PDF:", error);
+      showError("Failed to extract text from the PDF.");
+    } finally {
       setIsCvProcessing(false);
-    };
+    }
   };
 
   const handleAvatarUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -350,11 +358,8 @@ const AdminDashboard = () => {
                       
                       <div>
                         <Label htmlFor="cvUpload">Upload CV (PDF only)</Label>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Input id="cvUpload" type="file" accept="application/pdf" onChange={handleCvUpload} className="flex-1" disabled={isCvProcessing} />
-                          {isCvProcessing && <Loader2 className="h-5 w-5 animate-spin" />}
-                        </div>
-                        {heroState.cvLink && heroState.cvLink !== '#' && <p className="text-sm text-muted-foreground mt-2">A CV is currently uploaded. Uploading a new one will replace it and re-extract the text for AI analysis.</p>}
+                        <Input id="cvUpload" type="file" accept="application/pdf" onChange={handleCvUpload} className="mt-1" />
+                        {heroState.cvLink && heroState.cvLink !== '#' && <p className="text-sm text-muted-foreground mt-2">A CV is currently uploaded. Uploading a new one will replace it.</p>}
                       </div>
                       <div>
                         <Label htmlFor="avatarUpload">Upload Profile Picture (Image)</Label>
@@ -362,8 +367,14 @@ const AdminDashboard = () => {
                         {heroState.avatarUrl && <p className="text-sm text-muted-foreground mt-2">An avatar is currently set. Uploading a new one will replace it.</p>}
                       </div>
                       <div>
-                        <Label htmlFor="cvText">CV Text for AI Analysis</Label>
-                        <Textarea id="cvText" value={heroState.cvText || ''} onChange={(e) => handleHeroChange('cvText', e.target.value)} rows={10} placeholder="Paste the full text of your CV here, or upload a PDF to auto-fill this field." />
+                        <div className="flex justify-between items-center mb-1">
+                          <Label htmlFor="cvText">CV Text for AI Analysis</Label>
+                          <Button type="button" variant="outline" size="sm" onClick={handleGenerateCvText} disabled={!cvFile || isCvProcessing}>
+                            {isCvProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Generate from CV
+                          </Button>
+                        </div>
+                        <Textarea id="cvText" value={heroState.cvText || ''} onChange={(e) => handleHeroChange('cvText', e.target.value)} rows={10} placeholder="Paste the full text of your CV here, or upload a PDF and click 'Generate from CV'." />
                         <p className="text-sm text-muted-foreground mt-2">This text will be used by the AI Job Matcher. It will not be visible on the public site.</p>
                       </div>
                     </div>
