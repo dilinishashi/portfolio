@@ -43,7 +43,6 @@ serve(async (req) => {
         const doc = new DOMParser().parseFromString(html, "text/html");
         if (!doc) throw new Error("Failed to parse HTML from URL.");
 
-        // Try to find the main content, otherwise fall back to the whole body
         const mainContent = doc.querySelector("main") || doc.querySelector("article") || doc.body;
         finalJobDescription = mainContent?.textContent?.replace(/\s\s+/g, ' ').trim() || '';
         
@@ -56,20 +55,25 @@ serve(async (req) => {
     }
 
     const analysisPrompt = `
-      You are an expert career coach and resume analyst.
-      Analyze the following CV text and job description.
-      Provide a percentage match score, a brief summary explaining why the candidate is a good fit,
-      and a list of the candidate's skills that directly match the job requirements.
+      You are an expert hiring assistant. Your task is to compare a candidate's CV against a job description.
 
-      CV Text:
+      **Candidate's CV:**
       ---
       ${cvText}
       ---
 
-      Job Description:
+      **Job Description:**
       ---
       {JOB_DESCRIPTION_PLACEHOLDER}
       ---
+
+      **Instructions:**
+      1.  Carefully read both the CV and the Job Description.
+      2.  Calculate a match percentage based on how well the candidate's skills and experience align with the job requirements.
+      3.  Write a brief summary explaining the match score. Highlight key strengths and potential gaps.
+      4.  List the specific skills from the CV that are also mentioned or required in the Job Description.
+
+      **IMPORTANT:** Your analysis MUST be based on comparing the two documents. Do not just summarize the CV. If the Job Description is missing or empty, state that you cannot perform the analysis.
 
       Your response MUST be a valid JSON object with the following structure:
       {
@@ -84,7 +88,7 @@ serve(async (req) => {
       const prompt = analysisPrompt.replace('{JOB_DESCRIPTION_PLACEHOLDER}', finalJobDescription);
       messages = [{ role: "user", content: prompt }];
     } else { // jobDescriptionImage
-      model = "gpt-4o"; // Use the vision-capable model
+      model = "gpt-4o";
       const promptForImage = analysisPrompt.replace('{JOB_DESCRIPTION_PLACEHOLDER}', '(The job description is in the provided image. Please extract the text from the image first and then perform the analysis.)');
       messages = [
         {
