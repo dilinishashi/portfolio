@@ -56,7 +56,12 @@ const JobAnalyzer = () => {
       setAnalysisResult(data);
     } catch (err: any) {
       console.error("Analysis failed:", err);
-      setError(err.message || "An unknown error occurred. Check the browser console and make sure your OpenAI API key is set correctly in Supabase secrets.");
+      // The Supabase client puts the detailed error message from the function's response inside the 'context' property
+      const detailedMessage = err.context?.error || err.message;
+      setError(
+        detailedMessage || 
+        "An unknown error occurred. Please check the browser console and ensure your OpenAI API key is set correctly in Supabase secrets."
+      );
     } finally {
       setIsLoading(false);
     }
