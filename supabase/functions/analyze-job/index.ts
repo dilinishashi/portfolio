@@ -12,10 +12,13 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Function invoked. Checking for OpenAI API key...");
     const openAiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openAiKey) {
-      throw new Error("OPENAI_API_KEY is not set in Supabase secrets.");
+      console.error("! IMPORTANT: OPENAI_API_KEY secret not found!");
+      throw new Error("The OPENAI_API_KEY secret is not set in the Supabase project. Please add it in the Edge Function settings.");
     }
+    console.log("OpenAI API key found successfully.");
 
     const { jobDescriptionText, jobDescriptionImage, jobDescriptionUrl, cvText } = await req.json();
     if (!cvText) {
@@ -34,6 +37,7 @@ serve(async (req) => {
     let finalJobDescription = jobDescriptionText;
 
     if (jobDescriptionUrl) {
+      console.log(`Processing URL: ${jobDescriptionUrl}`);
       try {
         const response = await fetch(jobDescriptionUrl);
         if (!response.ok) {
@@ -49,6 +53,7 @@ serve(async (req) => {
         if (!finalJobDescription) {
           throw new Error("Could not extract any text content from the URL.");
         }
+        console.log("Successfully extracted content from URL.");
       } catch (e) {
         throw new Error(`Failed to process URL. It might be a complex site or require a login. Error: ${e.message}`);
       }
@@ -56,25 +61,20 @@ serve(async (req) => {
 
     const analysisPrompt = `
       You are an expert hiring assistant. Your task is to compare a candidate's CV against a job description.
-
       **Candidate's CV:**
       ---
       ${cvText}
       ---
-
       **Job Description:**
       ---
       {JOB_DESCRIPTION_PLACEHOLDER}
       ---
-
       **Instructions:**
       1.  Carefully read both the CV and the Job Description.
       2.  Calculate a match percentage based on how well the candidate's skills and experience align with the job requirements.
       3.  Write a brief summary explaining the match score. Highlight key strengths and potential gaps.
       4.  List the specific skills from the CV that are also mentioned or required in the Job Description.
-
       **IMPORTANT:** Your analysis MUST be based on comparing the two documents. Do not just summarize the CV. If the Job Description is missing or empty, state that you cannot perform the analysis.
-
       Your response MUST be a valid JSON object with the following structure:
       {
         "matchPercentage": number,
@@ -104,6 +104,7 @@ serve(async (req) => {
       ];
     }
 
+    console.log(`Making request to OpenAI with model: ${model}`);
     const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: 'POST',
       headers: {
@@ -119,10 +120,13 @@ serve(async (req) => {
       }),
     });
 
+    console.log(`OpenAI response status: ${openAiResponse.status}`);
     if (!openAiResponse.ok) {
       const errorBody = await openAiResponse.text();
-      throw new Error(`OpenAI API error: ${openAiResponse.status} ${errorBody}`);
+      console.error("OpenAI API Error:", errorBody);
+      throw new Error(`OpenAI API error (${openAiResponse.status}): ${errorBody}`);
     }
+    console.log("Successfully received response from OpenAI.");
 
     const data = await openAiResponse.json();
     const analysis = JSON.parse(data.choices[0].message.content);
@@ -132,7 +136,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("An error occurred in the function:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
