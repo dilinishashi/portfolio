@@ -13,7 +13,7 @@ interface AnalysisResult {
   matchPercentage: number;
   summary: string;
   matchingKeywords: string[];
-  missingKeywords: string[]; // Added to show keywords from job description not in CV
+  missingKeywords: string[];
 }
 
 // A list of common English "stop words" to filter out from the analysis
@@ -50,7 +50,19 @@ const JobAnalyzer = () => {
       .replace(/[^\w\s]/gi, ' ') // remove punctuation
       .split(/\s+/) // split by whitespace
       .filter(word => word.length > 2 && !stopWords.has(word)); // filter out stop words and short words
-    return new Set(words);
+
+    const tokens = new Set<string>();
+    words.forEach(word => tokens.add(word)); // Add unigrams (single words)
+
+    // Add bigrams (two-word phrases)
+    for (let i = 0; i < words.length - 1; i++) {
+      const bigram = `${words[i]} ${words[i + 1]}`;
+      // Only add bigrams if both words are not stop words and the bigram itself isn't too generic
+      if (!stopWords.has(words[i]) && !stopWords.has(words[i+1]) && bigram.length > 5) {
+        tokens.add(bigram);
+      }
+    }
+    return tokens;
   };
 
   const handleAnalyze = () => {
@@ -80,6 +92,7 @@ const JobAnalyzer = () => {
 
         const intersection = new Set([...cvTokens].filter(token => jobTokens.has(token)));
         const missing = new Set([...jobTokens].filter(token => !cvTokens.has(token)));
+        // The union should include all unique tokens from both CV and job description
         const union = new Set([...cvTokens, ...jobTokens]);
 
         // Jaccard Index for similarity percentage
@@ -87,7 +100,7 @@ const JobAnalyzer = () => {
         const matchingKeywords = Array.from(intersection).sort();
         const missingKeywords = Array.from(missing).sort();
 
-        const summary = `Based on a keyword analysis, your CV has a ${matchPercentage}% content match with the job description. We found ${intersection.size} matching keywords and ${missingKeywords.length} keywords from the job description that are not present in your CV.`;
+        const summary = `Based on a keyword and phrase analysis, your CV has a ${matchPercentage}% content match with the job description. We found ${intersection.size} matching terms and ${missingKeywords.length} terms from the job description that are not present in your CV.`;
 
         setAnalysisResult({
           matchPercentage,
@@ -168,26 +181,26 @@ const JobAnalyzer = () => {
                 <p className="text-sm text-muted-foreground mt-1">{analysisResult.summary}</p>
               </div>
               <div>
-                <Label>Matching Keywords</Label>
+                <Label>Matching Terms</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {analysisResult.matchingKeywords.length > 0 ? (
                     analysisResult.matchingKeywords.map((keyword) => (
                       <Badge key={keyword} variant="secondary">{keyword}</Badge>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">No significant keyword matches found.</p>
+                    <p className="text-sm text-muted-foreground">No significant matching terms found.</p>
                   )}
                 </div>
               </div>
               <div>
-                <Label>Missing Keywords (from Job Description)</Label>
+                <Label>Missing Terms (from Job Description)</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {analysisResult.missingKeywords?.length > 0 ? (
                     analysisResult.missingKeywords.map((keyword) => (
                       <Badge key={keyword} variant="destructive" className="bg-destructive/20 text-destructive hover:bg-destructive/30">{keyword}</Badge>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">All job description keywords found in your CV!</p>
+                    <p className="text-sm text-muted-foreground">All job description terms found in your CV!</p>
                   )}
                 </div>
               </div>
