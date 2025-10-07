@@ -3,7 +3,7 @@ import { useContent } from '@/context/ContentContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { Label } => '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertCircle, Wand2 } from 'lucide-react';
@@ -155,7 +155,7 @@ const JobAnalyzer = () => {
         // Jaccard Index for similarity percentage
         const matchPercentage = Math.round((intersection.size / union.size) * 100);
         const matchingKeywords = Array.from(intersection).sort();
-        const missingKeywords = Array.from(missing).sort();
+        const missingKeywords = Array.from(missing).sort(); // Still calculate for summary, but won't display
 
         const summary = `Based on an enhanced keyword and phrase analysis (including synonyms), your CV has a ${matchPercentage}% content match with the job description. We found ${intersection.size} matching terms and ${missingKeywords.length} terms from the job description that are not present in your CV.`;
 
@@ -249,18 +249,7 @@ const JobAnalyzer = () => {
                   )}
                 </div>
               </div>
-              <div>
-                <Label>Missing Terms (from Job Description)</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {analysisResult.missingKeywords?.length > 0 ? (
-                    analysisResult.missingKeywords.map((keyword) => (
-                      <Badge key={keyword} variant="destructive" className="bg-destructive/20 text-destructive hover:bg-destructive/30">{keyword}</Badge>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">All job description terms found in your CV!</p>
-                  )}
-                </div>
-              </div>
+              {/* Removed the "Missing Terms" section as requested */}
             </CardContent>
           </Card>
         )}
