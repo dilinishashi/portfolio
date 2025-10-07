@@ -33,8 +33,38 @@ const stopWords = new Set([
   'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', 'couldn', 'didn', 'doesn', 'hadn', 
   'hasn', 'haven', 'isn', 'ma', 'mightn', 'mustn', 'needn', 'shan', 'shouldn', 'wasn', 
   'weren', 'won', 'wouldn', 'experience', 'work', 'job', 'role', 'responsibilities', 
-  'requirements', 'skills', 'company', 'team', 'etc', 'eg', 'years'
+  'requirements', 'skills', 'company', 'team', 'etc', 'eg', 'years', 'junior', 'senior', 'lead', 'principal'
 ]);
+
+// A simple map for synonym expansion
+const synonymMap: { [key: string]: string[] } = {
+  'qa': ['quality assurance', 'quality engineer', 'tester'],
+  'testing': ['test', 'qa', 'quality assurance'],
+  'engineer': ['developer', 'programmer', 'specialist'],
+  'selenium': ['automation', 'automated testing'],
+  'jira': ['project management', 'bug tracking'],
+  'agile': ['scrum', 'kanban'],
+  'sql': ['database', 'data query'],
+  'api': ['rest api', 'graphql'],
+  'manual testing': ['exploratory testing', 'functional testing'],
+  'automation testing': ['automated testing', 'test automation'],
+  'test planning': ['test strategy', 'test case design'],
+  'defect tracking': ['bug management', 'issue tracking'],
+  'collaboration': ['teamwork', 'cross-functional'],
+  'software': ['application', 'system'],
+  'quality': ['excellence', 'standard'],
+  'assurance': ['guarantee', 'verification'],
+  'experience': ['background', 'expertise'],
+  'requirements': ['specifications', 'criteria'],
+  'development': ['dev', 'engineering'],
+  'lifecycle': ['sdlc', 'process'],
+  'ci/cd': ['continuous integration', 'continuous delivery'],
+  'performance': ['speed', 'scalability'],
+  'security': ['vulnerability', 'safeguard'],
+  'cloud': ['aws', 'azure', 'gcp'],
+  'frontend': ['ui', 'user interface', 'react', 'angular', 'vue'],
+  'backend': ['server-side', 'api development', 'node.js', 'python', 'java'],
+};
 
 const JobAnalyzer = () => {
   const { content } = useContent();
@@ -57,12 +87,37 @@ const JobAnalyzer = () => {
     // Add bigrams (two-word phrases)
     for (let i = 0; i < words.length - 1; i++) {
       const bigram = `${words[i]} ${words[i + 1]}`;
-      // Only add bigrams if both words are not stop words and the bigram itself isn't too generic
       if (!stopWords.has(words[i]) && !stopWords.has(words[i+1]) && bigram.length > 5) {
         tokens.add(bigram);
       }
     }
+
+    // Add trigrams (three-word phrases)
+    for (let i = 0; i < words.length - 2; i++) {
+      const trigram = `${words[i]} ${words[i + 1]} ${words[i + 2]}`;
+      if (!stopWords.has(words[i]) && !stopWords.has(words[i+1]) && !stopWords.has(words[i+2]) && trigram.length > 8) {
+        tokens.add(trigram);
+      }
+    }
     return tokens;
+  };
+
+  const getExpandedTokens = (baseTokens: Set<string>): Set<string> => {
+    const expandedTokens = new Set(baseTokens);
+    baseTokens.forEach(token => {
+      // Check for direct synonyms of the token
+      if (synonymMap[token]) {
+        synonymMap[token].forEach(syn => expandedTokens.add(syn));
+      }
+      // Also check for synonyms of individual words within multi-word tokens
+      const wordsInToken = token.split(' ');
+      wordsInToken.forEach(word => {
+        if (synonymMap[word]) {
+          synonymMap[word].forEach(syn => expandedTokens.add(syn));
+        }
+      });
+    });
+    return expandedTokens;
   };
 
   const handleAnalyze = () => {
@@ -84,23 +139,25 @@ const JobAnalyzer = () => {
     setTimeout(() => {
       try {
         const cvTokens = getTextTokens(cvText);
-        const jobTokens = getTextTokens(jobDescription);
+        const rawJobTokens = getTextTokens(jobDescription);
+        const expandedJobTokens = getExpandedTokens(rawJobTokens); // Use expanded tokens for job description
 
-        if (jobTokens.size === 0) {
+        if (expandedJobTokens.size === 0) {
           throw new Error("Could not extract any meaningful keywords from the job description.");
         }
 
-        const intersection = new Set([...cvTokens].filter(token => jobTokens.has(token)));
-        const missing = new Set([...jobTokens].filter(token => !cvTokens.has(token)));
-        // The union should include all unique tokens from both CV and job description
-        const union = new Set([...cvTokens, ...jobTokens]);
+        const intersection = new Set([...cvTokens].filter(token => expandedJobTokens.has(token)));
+        const missing = new Set([...expandedJobTokens].filter(token => !cvTokens.has(token)));
+        
+        // The union should include all unique tokens from both CV and the expanded job description tokens
+        const union = new Set([...cvTokens, ...expandedJobTokens]);
 
         // Jaccard Index for similarity percentage
         const matchPercentage = Math.round((intersection.size / union.size) * 100);
         const matchingKeywords = Array.from(intersection).sort();
         const missingKeywords = Array.from(missing).sort();
 
-        const summary = `Based on a keyword and phrase analysis, your CV has a ${matchPercentage}% content match with the job description. We found ${intersection.size} matching terms and ${missingKeywords.length} terms from the job description that are not present in your CV.`;
+        const summary = `Based on an enhanced keyword and phrase analysis (including synonyms), your CV has a ${matchPercentage}% content match with the job description. We found ${intersection.size} matching terms and ${missingKeywords.length} terms from the job description that are not present in your CV.`;
 
         setAnalysisResult({
           matchPercentage,
