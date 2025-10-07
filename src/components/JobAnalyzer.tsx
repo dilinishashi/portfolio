@@ -13,6 +13,7 @@ interface AnalysisResult {
   matchPercentage: number;
   summary: string;
   matchingKeywords: string[];
+  missingKeywords: string[]; // Added to show keywords from job description not in CV
 }
 
 // A list of common English "stop words" to filter out from the analysis
@@ -78,18 +79,21 @@ const JobAnalyzer = () => {
         }
 
         const intersection = new Set([...cvTokens].filter(token => jobTokens.has(token)));
+        const missing = new Set([...jobTokens].filter(token => !cvTokens.has(token)));
         const union = new Set([...cvTokens, ...jobTokens]);
 
         // Jaccard Index for similarity percentage
         const matchPercentage = Math.round((intersection.size / union.size) * 100);
         const matchingKeywords = Array.from(intersection).sort();
+        const missingKeywords = Array.from(missing).sort();
 
-        const summary = `Based on a keyword analysis of your CV and the job description, there is a ${matchPercentage}% content match. The analysis found ${intersection.size} common keywords out of a total of ${union.size} unique terms.`;
+        const summary = `Based on a keyword analysis, your CV has a ${matchPercentage}% content match with the job description. We found ${intersection.size} matching keywords and ${missingKeywords.length} keywords from the job description that are not present in your CV.`;
 
         setAnalysisResult({
           matchPercentage,
           summary,
           matchingKeywords,
+          missingKeywords,
         });
 
       } catch (e: any) {
@@ -172,6 +176,18 @@ const JobAnalyzer = () => {
                     ))
                   ) : (
                     <p className="text-sm text-muted-foreground">No significant keyword matches found.</p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label>Missing Keywords (from Job Description)</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {analysisResult.missingKeywords.length > 0 ? (
+                    analysisResult.missingKeywords.map((keyword) => (
+                      <Badge key={keyword} variant="destructive" className="bg-destructive/20 text-destructive hover:bg-destructive/30">{keyword}</Badge>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">All job description keywords found in your CV!</p>
                   )}
                 </div>
               </div>
