@@ -3,7 +3,7 @@ import { useContent } from '@/context/ContentContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } => '@/components/ui/label';
+import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertCircle, Wand2 } from 'lucide-react';
@@ -249,7 +249,6 @@ const JobAnalyzer = () => {
                   )}
                 </div>
               </div>
-              {/* Removed the "Missing Terms" section as requested */}
             </CardContent>
           </Card>
         )}
