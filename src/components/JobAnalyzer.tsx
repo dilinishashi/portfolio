@@ -182,7 +182,7 @@ const JobAnalyzer = () => {
               <div>
                 <Label>Missing Keywords (from Job Description)</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {analysisResult.missingKeywords.length > 0 ? (
+                  {analysisResult.missingKeywords?.length > 0 ? (
                     analysisResult.missingKeywords.map((keyword) => (
                       <Badge key={keyword} variant="destructive" className="bg-destructive/20 text-destructive hover:bg-destructive/30">{keyword}</Badge>
                     ))
