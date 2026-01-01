@@ -4,13 +4,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Ensure the API key is loaded from environment variables
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-if (!GEMINI_API_KEY) {
-  console.error("GEMINI_API_KEY is not set. Please set it in your environment variables.");
-  // In a real application, you might want to throw an error or handle this more gracefully.
-}
-
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || ''); // Provide a fallback empty string if key is missing
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -22,9 +15,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Both cvText and jobDescription are required.' });
   }
 
+  // Critical check: Ensure API key is present before proceeding
   if (!GEMINI_API_KEY) {
-    return res.status(500).json({ error: 'Server configuration error: Gemini API key is missing.' });
+    console.error("GEMINI_API_KEY is not set. Please set it in your environment variables.");
+    return res.status(500).json({ error: 'Server configuration error: Gemini API key is missing. Please ensure GEMINI_API_KEY is set in your environment variables.' });
   }
+
+  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
@@ -79,11 +76,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const jsonEndIndex = text.lastIndexOf('}');
       if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
         jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1);
+      } else {
+        // If no valid JSON structure is found, throw an error
+        throw new Error("No valid JSON structure found in Gemini's response.");
       }
     }
 
     if (!jsonString.trim()) {
-      throw new Error("Gemini returned an empty or unparseable response after extraction attempt.");
+      throw new Error("Gemini returned an empty or unparseable JSON string after extraction attempt.");
     }
 
     let analysis;
@@ -97,7 +97,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json(analysis);
 
   } catch (error: any) {
-    console.error('Error calling Gemini API:', error.message);
-    res.status(500).json({ error: 'Failed to analyze job description with AI.', details: error.message });
+    console.error('Error during Gemini API call or processing:', error.message);
+    // Provide more specific error messages based on the type of error
+    if (error.message.includes("API key")) {
+      res.status(500).json({ error: 'Gemini API key might be invalid or incorrectly configured.', details: error.message });
+    } else if (error.message.includes("No valid JSON structure found")) {
+      res.status(500).json({ error: 'AI response did not contain a valid JSON structure as expected.', details: error.message });
+    } else if (error.message.includes("Failed to parse AI analysis")) {
+      res.status(500).json({ error: 'AI response was malformed and could not be parsed.', details: error.message });
+    }
+    else {
+      res.status(500).json({ error: 'An unexpected error occurred during AI analysis.', details: error.message });
+    }
   }
 }
