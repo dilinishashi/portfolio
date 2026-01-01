@@ -90,6 +90,7 @@ export type Project = {
   github_url: string;
   technologies: string[];
   is_featured: boolean;
+  display_order: number; // Added display_order
 };
 
 export type Content = {

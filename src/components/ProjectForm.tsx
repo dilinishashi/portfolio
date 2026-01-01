@@ -24,6 +24,7 @@ const ProjectForm = ({ project, onSave, onClose }: ProjectFormProps) => {
     github_url: '',
     technologies: '',
     is_featured: false,
+    display_order: 0, // Added display_order
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,6 +38,7 @@ const ProjectForm = ({ project, onSave, onClose }: ProjectFormProps) => {
         github_url: project.github_url || '',
         technologies: project.technologies?.join(', ') || '',
         is_featured: project.is_featured || false,
+        display_order: project.display_order || 0, // Populate display_order
       });
     } else {
       setFormData({
@@ -47,13 +49,14 @@ const ProjectForm = ({ project, onSave, onClose }: ProjectFormProps) => {
         github_url: '',
         technologies: '',
         is_featured: false,
+        display_order: 0, // Default for new projects
       });
     }
   }, [project]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: name === 'display_order' ? parseInt(value, 10) || 0 : value }));
   };
 
   const handleCheckboxChange = (checked: boolean | 'indeterminate') => {
@@ -122,6 +125,7 @@ const ProjectForm = ({ project, onSave, onClose }: ProjectFormProps) => {
       <div><Label htmlFor="project_url">Live Demo URL</Label><Input id="project_url" name="project_url" value={formData.project_url} onChange={handleChange} /></div>
       <div><Label htmlFor="github_url">Code/GitHub URL</Label><Input id="github_url" name="github_url" value={formData.github_url} onChange={handleChange} /></div>
       <div><Label htmlFor="technologies">Technologies (comma-separated)</Label><Input id="technologies" name="technologies" value={formData.technologies} onChange={handleChange} /></div>
+      <div><Label htmlFor="display_order">Display Order</Label><Input id="display_order" name="display_order" type="number" value={formData.display_order} onChange={handleChange} /></div> {/* Added display_order input */}
       <div className="flex items-center space-x-2 pt-2">
         <Checkbox id="is_featured" checked={formData.is_featured} onCheckedChange={handleCheckboxChange} />
         <Label htmlFor="is_featured" className="font-medium">Featured Project</Label>
