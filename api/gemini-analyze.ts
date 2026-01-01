@@ -65,6 +65,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log("Raw Gemini API response text:", text); // Log the raw response for debugging
 
+    if (!text || text.trim() === '') {
+      throw new Error("Gemini API returned an empty response. This could indicate an issue with the API call or the API key.");
+    }
+
     let jsonString = text;
     // Attempt to extract JSON if it's wrapped in markdown code blocks
     const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
@@ -78,12 +82,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1);
       } else {
         // If no valid JSON structure is found, throw an error
-        throw new Error("No valid JSON structure found in Gemini's response.");
+        throw new Error("No valid JSON structure (even partial) found in Gemini's response. Check raw response in logs.");
       }
     }
 
     if (!jsonString.trim()) {
-      throw new Error("Gemini returned an empty or unparseable JSON string after extraction attempt.");
+      throw new Error("Extracted JSON string is empty or whitespace. Gemini might not have generated valid JSON.");
     }
 
     let analysis;
@@ -102,9 +106,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (error.message.includes("API key")) {
       res.status(500).json({ error: 'Gemini API key might be invalid or incorrectly configured.', details: error.message });
     } else if (error.message.includes("No valid JSON structure found")) {
-      res.status(500).json({ error: 'AI response did not contain a valid JSON structure as expected.', details: error.message });
+      res.status(500).json({ error: 'AI response did not contain a valid JSON structure as expected. Check server logs for raw response.', details: error.message });
     } else if (error.message.includes("Failed to parse AI analysis")) {
-      res.status(500).json({ error: 'AI response was malformed and could not be parsed.', details: error.message });
+      res.status(500).json({ error: 'AI response was malformed and could not be parsed. Check server logs for raw response.', details: error.message });
+    } else if (error.message.includes("Gemini API returned an empty response")) {
+      res.status(500).json({ error: 'Gemini API returned an empty response. This often means an issue with the API key, rate limits, or an internal Gemini error. Check server logs.', details: error.message });
     }
     else {
       res.status(500).json({ error: 'An unexpected error occurred during AI analysis.', details: error.message });
