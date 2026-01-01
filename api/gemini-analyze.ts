@@ -6,6 +6,10 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
+    // Allow GET requests for the test endpoint
+    if (req.method === 'GET' && req.query.test === 'true') {
+      return res.status(200).json({ message: 'Serverless function is alive and responding with JSON!', test: true });
+    }
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
