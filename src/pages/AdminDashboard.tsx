@@ -1,5 +1,5 @@
 import { useSupabase } from '@/context/SupabaseProvider';
-import { useContent, type Album, type Photo, type LoginErrorContent, type Project } from '@/context/ContentContext';
+import { useContent, type Album, type Photo, type LoginErrorContent, type Project, type HeroContent, type AboutContent, type GalleryContent, type ContactContent } from '@/context/ContentContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import ProjectForm from '@/components/ProjectForm';
 import { useQueryClient } from '@tanstack/react-query';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+import { Switch } from '@/components/ui/switch'; // Import Switch component
 
 // Configure the PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -31,15 +32,6 @@ type Feature = {
   icon: string;
   title: string;
   description: string;
-};
-
-type AboutContent = {
-  title: string;
-  subtitle: string;
-  bio_p1: string;
-  bio_p2: string;
-  skills: string[];
-  features: Feature[];
 };
 
 const AdminDashboard = () => {
@@ -63,6 +55,16 @@ const AdminDashboard = () => {
   const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
+  // New state for section visibility
+  const [sectionVisibility, setSectionVisibility] = useState({
+    showHero: content.showHero,
+    showAbout: content.showAbout,
+    showProjects: content.showProjects,
+    showAIAnalyzer: content.showAIAnalyzer,
+    showGallery: content.showGallery,
+    showContact: content.showContact,
+  });
+
   useEffect(() => {
     setHeroState(content.hero);
     setAboutState(content.about);
@@ -73,6 +75,14 @@ const AdminDashboard = () => {
     setContactDescription(content.contact.description);
     setLoginErrorState(content.loginError);
     setProjects(content.projects);
+    setSectionVisibility({
+      showHero: content.showHero,
+      showAbout: content.showAbout,
+      showProjects: content.showProjects,
+      showAIAnalyzer: content.showAIAnalyzer,
+      showGallery: content.showGallery,
+      showContact: content.showContact,
+    });
   }, [content]);
 
   const handleLogout = async () => {
@@ -86,6 +96,11 @@ const AdminDashboard = () => {
 
   const handleSave = (section: string, data: any) => {
     updateContent({ [section]: data });
+  };
+
+  const handleSectionVisibilityChange = (sectionKey: keyof typeof sectionVisibility, checked: boolean) => {
+    setSectionVisibility(prev => ({ ...prev, [sectionKey]: checked }));
+    updateContent({ [sectionKey]: checked }); // Immediately update context and database
   };
 
   const handleOpenProjectForm = (project: Project | null = null) => {
@@ -120,7 +135,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleHeroChange = (field: string, value: string) => setHeroState(p => ({ ...p, [field]: value }));
+  const handleHeroChange = (field: keyof HeroContent, value: string) => setHeroState(p => ({ ...p, [field]: value }));
   const handleSocialChange = (index: number, url: string) => {
     const newSocials = [...heroState.socials];
     newSocials[index].url = url;
@@ -241,7 +256,7 @@ const AdminDashboard = () => {
     showSuccess('Feature card deleted. Remember to save your changes!');
   };
 
-  const handleGalleryTextChange = (field: 'title' | 'description', value: string) => {
+  const handleGalleryTextChange = (field: keyof GalleryContent, value: string) => {
     setGalleryState(p => ({ ...p, [field]: value }));
   };
 
@@ -602,42 +617,56 @@ const AdminDashboard = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Site Settings</CardTitle>
-                  <CardDescription>Manage site-wide settings like the login error message and sound.</CardDescription>
+                  <CardDescription>Manage site-wide settings like the login error message and sound, and section visibility.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <form onSubmit={(e: FormEvent) => { e.preventDefault(); handleSave('loginError', loginErrorState); }} className="space-y-6">
-                    <h3 className="text-lg font-medium">Login Error Message</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="loginErrorTitle">Modal Title</Label>
-                        <Input id="loginErrorTitle" value={loginErrorState.title} onChange={(e) => handleLoginErrorChange('title', e.target.value)} />
+                <CardContent className="space-y-6">
+                  <h3 className="text-lg font-medium">Section Visibility</h3>
+                  <div className="space-y-4">
+                    {Object.entries(sectionVisibility).map(([key, value]) => (
+                      <div key={key} className="flex items-center justify-between p-3 border rounded-md">
+                        <Label htmlFor={key} className="text-base capitalize">
+                          {key.replace('show', '').replace(/([A-Z])/g, ' $1').trim()}
+                        </Label>
+                        <Switch
+                          id={key}
+                          checked={value}
+                          onCheckedChange={(checked) => handleSectionVisibilityChange(key as keyof typeof sectionVisibility, checked)}
+                        />
                       </div>
-                      <div>
-                        <Label htmlFor="loginErrorMessage">Error Message</Label>
-                        <Input id="loginErrorMessage" value={loginErrorState.message} onChange={(e) => handleLoginErrorChange('message', e.target.value)} />
-                      </div>
-                      <div>
-                        <Label htmlFor="loginErrorEmoji">Emoji</Label>
-                        <Input id="loginErrorEmoji" value={loginErrorState.emoji} onChange={(e) => handleLoginErrorChange('emoji', e.target.value)} />
-                      </div>
+                    ))}
+                  </div>
+                  <Separator />
+                  <h3 className="text-lg font-medium">Login Error Message</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="loginErrorTitle">Modal Title</Label>
+                      <Input id="loginErrorTitle" value={loginErrorState.title} onChange={(e) => handleLoginErrorChange('title', e.target.value)} />
                     </div>
-                    <Separator />
-                    <h3 className="text-lg font-medium">Login Error Sound</h3>
-                    <div className="space-y-2">
-                      <Label htmlFor="audioUpload">Upload Audio File</Label>
-                      <div className="flex items-center gap-4">
-                        <Input id="audioUpload" type="file" accept="audio/*" onChange={handleAudioUpload} disabled={isProcessingAudio} className="flex-1" />
-                        {isProcessingAudio && <Loader2 className="animate-spin" />}
-                      </div>
-                      {loginErrorState.errorSoundUrl && (
-                        <div className="text-sm text-muted-foreground mt-2">
-                          <p>Current sound:</p>
-                          <audio src={loginErrorState.errorSoundUrl} controls className="w-full mt-1 h-8" />
-                        </div>
-                      )}
+                    <div>
+                      <Label htmlFor="loginErrorMessage">Error Message</Label>
+                      <Input id="loginErrorMessage" value={loginErrorState.message} onChange={(e) => handleLoginErrorChange('message', e.target.value)} />
                     </div>
-                    <Button type="submit">Save Settings</Button>
-                  </form>
+                    <div>
+                      <Label htmlFor="loginErrorEmoji">Emoji</Label>
+                      <Input id="loginErrorEmoji" value={loginErrorState.emoji} onChange={(e) => handleLoginErrorChange('emoji', e.target.value)} />
+                    </div>
+                  </div>
+                  <Separator />
+                  <h3 className="text-lg font-medium">Login Error Sound</h3>
+                  <div className="space-y-2">
+                    <Label htmlFor="audioUpload">Upload Audio File</Label>
+                    <div className="flex items-center gap-4">
+                      <Input id="audioUpload" type="file" accept="audio/*" onChange={handleAudioUpload} disabled={isProcessingAudio} className="flex-1" />
+                      {isProcessingAudio && <Loader2 className="animate-spin" />}
+                    </div>
+                    {loginErrorState.errorSoundUrl && (
+                      <div className="text-sm text-muted-foreground mt-2">
+                        <p>Current sound:</p>
+                        <audio src={loginErrorState.errorSoundUrl} controls className="w-full mt-1 h-8" />
+                      </div>
+                    )}
+                  </div>
+                  <Button type="submit">Save Settings</Button>
                 </CardContent>
               </Card>
             </TabsContent>

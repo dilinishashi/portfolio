@@ -100,6 +100,13 @@ export type Content = {
   contact: ContactContent;
   loginError: LoginErrorContent;
   projects: Project[];
+  // New visibility flags
+  showHero: boolean;
+  showAbout: boolean;
+  showProjects: boolean;
+  showAIAnalyzer: boolean;
+  showGallery: boolean;
+  showContact: boolean;
 };
 
 type ContentContextType = {
@@ -183,12 +190,19 @@ const initialContent: Content = {
     errorSoundUrl: "",
   },
   projects: [],
+  // Initialize new visibility flags
+  showHero: true,
+  showAbout: true,
+  showProjects: true,
+  showAIAnalyzer: true,
+  showGallery: true,
+  showContact: true,
 };
 
 const contentQueryKey = ['portfolioContent'];
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
-export const ContentProvider = ({ children }: { children: ReactNode }) => {
+export const ContentProvider = ({ children }: { ReactNode }) => {
   const queryClient = useQueryClient();
 
   const { data: content, isLoading, isError } = useQuery<Content>({
