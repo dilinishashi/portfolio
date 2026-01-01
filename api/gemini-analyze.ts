@@ -66,16 +66,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const response = await result.response;
     const text = response.text();
 
-    // Attempt to parse the JSON from Gemini's response
-    const jsonStartIndex = text.indexOf('{');
-    const jsonEndIndex = text.lastIndexOf('}');
-    
-    if (jsonStartIndex === -1 || jsonEndIndex === -1) {
-      throw new Error("Gemini did not return a valid JSON structure.");
+    console.log("Raw Gemini API response text:", text); // Log the raw response for debugging
+
+    let jsonString = text;
+    // Attempt to extract JSON if it's wrapped in markdown code blocks
+    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
+    if (jsonMatch && jsonMatch[1]) {
+      jsonString = jsonMatch[1];
+    } else {
+      // Fallback to finding the first { and last } if not in markdown
+      const jsonStartIndex = text.indexOf('{');
+      const jsonEndIndex = text.lastIndexOf('}');
+      if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
+        jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1);
+      }
     }
 
-    const jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1);
-    const analysis = JSON.parse(jsonString);
+    if (!jsonString.trim()) {
+      throw new Error("Gemini returned an empty or unparseable response after extraction attempt.");
+    }
+
+    let analysis;
+    try {
+      analysis = JSON.parse(jsonString);
+    } catch (parseError: any) {
+      console.error("Failed to parse JSON from Gemini response:", parseError.message);
+      throw new Error(`Failed to parse AI analysis: ${parseError.message}. Raw extracted string: ${jsonString}`);
+    }
 
     res.status(200).json(analysis);
 
