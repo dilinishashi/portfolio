@@ -29,7 +29,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    const prompt = `You are an expert career advisor. Analyze the provided CV text and job description. Your goal is to determine the match percentage, summarize the alignment, identify key skills/experiences from the job description that are present in the CV, and suggest important skills/experiences from the job description that are missing or underrepresented in the CV.
+    const prompt = `You are an expert career advisor specializing in talent acquisition. Your task is to perform a comprehensive, semantic, and contextual analysis of the provided CV text against the given job description. Go beyond simple keyword matching; evaluate the depth of experience, transferable skills, and overall alignment with the role's requirements and responsibilities.
+
+    Your goal is to determine:
+    1.  A precise match percentage (0-100).
+    2.  A concise summary of the alignment, highlighting key strengths and areas where the candidate's profile could be further emphasized or developed for this specific role.
+    3.  Key skills, experiences, and qualifications from the job description that are strongly present or clearly implied in the CV.
+    4.  Important skills, experiences, or qualifications from the job description that appear to be missing, underrepresented, or could benefit from more explicit mention in the CV.
 
     CV Text:
     """
@@ -42,17 +48,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     """
 
     Provide the output in a JSON format with the following keys:
-    - \`matchPercentage\`: (number, 0-100) A numerical score indicating the overall match.
-    - \`summary\`: (string) A concise summary of the match, highlighting strengths and areas for improvement.
-    - \`matchingKeywords\`: (array of strings) Key skills/experiences from the job description that are clearly present in the CV.
+    - \`matchPercentage\`: (number, 0-100) A numerical score indicating the overall match based on semantic understanding.
+    - \`summary\`: (string) A concise summary of the match, highlighting strengths, potential, and areas for improvement.
+    - \`matchingKeywords\`: (array of strings) Key skills/experiences from the job description that are clearly present or strongly implied in the CV.
     - \`missingKeywords\`: (array of strings) Key skills/experiences from the job description that are missing or underrepresented in the CV.
 
     Example JSON output:
     {
       "matchPercentage": 75,
-      "summary": "Your CV shows a strong match for the role, particularly in X and Y. Consider highlighting Z more.",
-      "matchingKeywords": ["skill A", "experience B"],
-      "missingKeywords": ["skill C", "tool D"]
+      "summary": "Your CV demonstrates a strong foundation in X and Y, aligning well with the role's technical demands. To further strengthen your application, consider elaborating on your experience with Z, as it's a key requirement.",
+      "matchingKeywords": ["Agile Methodologies", "Test Automation", "Jira", "API Testing"],
+      "missingKeywords": ["Cloud Deployment", "CI/CD Pipelines"]
     }
     `;
 
