@@ -32,15 +32,15 @@ const Contact = () => {
     setIsSending(true);
     try {
       await emailjs.send(
-        "service_ub01352",
-        "template_l1opnka",
+        "service_cut54nl", // Service ID
+        "template_1hthjk2", // Template ID
         {
-          from_name: `${form.firstName} ${form.lastName}`,
-          from_email: form.email,
-          subject: form.subject,
+          name: `${form.firstName} ${form.lastName}`,
+          title: form.subject,
           message: form.message,
+          email: form.email,
         },
-        "WBUCFoJxw0XnBMkh6"
+        "Dwualigx_fu-x60fq" // Public Key
       );
       showSuccess("Your message has been sent successfully!");
       setForm({
@@ -62,17 +62,17 @@ const Contact = () => {
     {
       icon: Mail,
       title: "Email",
-      value: "hasan.bose1@gmail.com",
+      value: "dilinishashikalalee99@gmail.com",
     },
     {
       icon: Phone,
       title: "Phone",
-      value: "+94 767844940",
+      value: "+94 78 443 3313",
     },
     {
       icon: MapPin,
       title: "Location",
-      value: "Keppitigala Road, Elhenpitiya, Panagamuwa.",
+      value: "Katugasthara, Gampaha"
     },
   ];
 
@@ -101,16 +101,16 @@ const Contact = () => {
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>
-                      <Input id="firstName" name="firstName" value={form.firstName} onChange={handleInputChange} placeholder="Inamul" required />
+                      <Input id="firstName" name="firstName" value={form.firstName} onChange={handleInputChange} placeholder="First Name" required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="lastName">Last Name</Label>
-                      <Input id="lastName" name="lastName" value={form.lastName} onChange={handleInputChange} placeholder="Hasan" />
+                      <Input id="lastName" name="lastName" value={form.lastName} onChange={handleInputChange} placeholder="Last Name" />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" name="email" type="email" value={form.email} onChange={handleInputChange} placeholder="inamulhasan@example.com" required />
+                    <Input id="email" name="email" type="email" value={form.email} onChange={handleInputChange} placeholder="example@example.com" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="subject">Subject</Label>

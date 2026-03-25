@@ -186,7 +186,7 @@ const initialContent: Content = {
   },
   loginError: {
     title: "Access Denied",
-    message: "You are not Inamulhasan!",
+    message: "You are not Dilini Shshikala!",
     emoji: "😠",
     errorSoundUrl: "",
   },
