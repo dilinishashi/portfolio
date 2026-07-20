@@ -8,7 +8,7 @@ const Footer = () => {
             href="#hero"
             className="font-medium underline underline-offset-4"
           >
-            Inamulhasan
+            Dilini Shashikala Leelarathna
           </a>
           . All rights reserved. &copy; {new Date().getFullYear()}
         </p>
