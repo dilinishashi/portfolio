@@ -1,0 +1,60 @@
+name: Prevent Supabase Pause
+
+on:
+  schedule:
+    # Runs at 8:00 AM UTC every day
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Allows manual testing
+
+jobs:
+  ping-db:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Supabase Client
+        run: npm install @supabase/supabase-js
+
+      - name: Send Heartbeat to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          node -e "
+            const { createClient } = require('@supabase/supabase-js');
+            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+            
+            async function ping() {
+              console.log('Initiating Heartbeat Update...');
+              
+              // 1. Get the first record's ID dynamically
+              const { data: record } = await supabase.from('projects').select('id').limit(1).single();
+              
+              if (!record) {
+                console.error('No projects found to update. Creating activity via Select instead.');
+                await supabase.from('projects').select('id').limit(1);
+                return;
+              }
+
+              // 2. Perform a PATCH (Update) to force Database Engine activity
+              const { error } = await supabase
+                .from('projects')
+                .update({ last_ping_at: new Date().toISOString() })
+                .eq('id', record.id);
+              
+              if (error) {
+                console.error('Heartbeat failed:', error.message);
+                process.exit(1);
+              }
+              
+              console.log('Success! Database engine acknowledged write activity.');
+            }
+            
+            ping();
+          "
