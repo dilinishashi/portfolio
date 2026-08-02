@@ -31,25 +31,29 @@ jobs:
             const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
             
             async function ping() {
-              console.log('Initiating Heartbeat Update...');
+              console.log('Initiating Heartbeat...');
               
-              // 1. Get the first record's ID dynamically
-              const { data: record } = await supabase.from('projects').select('id').limit(1).single();
+              // 1. Fetch records safely and catch any connection/permission errors
+              const { data: records, error: selectError } = await supabase.from('projects').select('id').limit(1);
               
-              if (!record) {
-                console.error('No projects found to update. Creating activity via Select instead.');
-                await supabase.from('projects').select('id').limit(1);
-                return;
+              if (selectError) {
+                console.error('FATAL: Failed to connect or fetch from table:', selectError.message);
+                process.exit(1);
+              }
+              
+              if (!records || records.length === 0) {
+                console.error('FATAL: The table is completely empty! Add at least one row so the script has something to update.');
+                process.exit(1); 
               }
 
-              // 2. Perform a PATCH (Update) to force Database Engine activity
-              const { error } = await supabase
+              // 2. Perform the Update
+              const { error: updateError } = await supabase
                 .from('projects')
                 .update({ last_ping_at: new Date().toISOString() })
-                .eq('id', record.id);
+                .eq('id', records[0].id);
               
-              if (error) {
-                console.error('Heartbeat failed:', error.message);
+              if (updateError) {
+                console.error('FATAL: Heartbeat update failed:', updateError.message);
                 process.exit(1);
               }
               
